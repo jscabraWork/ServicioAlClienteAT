@@ -1,0 +1,37 @@
+<div class="container-wrapper">
+  <div class="container">
+    <h2>Casos Asignados</h2>
+
+    <div class="casos-lista">
+      <div *ngIf="casos.length === 0" class="empty-message">
+        No hay casos asignados
+      </div>
+
+      <div *ngFor="let caso of casos" class="caso-card">
+        <div class="caso-header">
+          <h3>{{ caso.tipo.nombre }}</h3>
+          <span class="caso-id">#{{ caso.id }}</span>
+        </div>
+        <p class="caso-descripcion">{{ caso.tipo.nombre }}</p>
+        <div class="caso-info">
+          <span class="cliente">Cliente: {{ caso.numeroUsuario }}</span>
+          <span class="fecha">{{ caso.fecha | date: 'dd/MM/yyyy' }}</span>
+        </div>
+        <div class="caso-acciones">
+          <button class="btn-chat" (click)="abrirChat(caso)">
+            Abrir Chat
+          </button>
+          <button class="btn-cerrar" (click)="cerrarCaso(caso.id)">
+            Cerrar Caso
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <app-chat
+    *ngIf="casoSeleccionado"
+    [caso]="casoSeleccionado"
+    (cerrar)="cerrarChat()">
+  </app-chat>
+</div>

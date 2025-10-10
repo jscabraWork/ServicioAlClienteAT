@@ -1,0 +1,31 @@
+<div class="chat-container">
+  <div class="chat-header">
+    <div>
+      <h3>Chat - {{ caso.tipo.nombre }}</h3>
+      <span class="chat-cliente">{{ caso.numeroUsuario }}</span>
+    </div>
+    <button class="btn-cerrar-chat" (click)="cerrarChat()">✕</button>
+  </div>
+
+  <div class="chat-mensajes">
+    <div *ngFor="let mensaje of mensajes"
+         class="mensaje"
+         [class.mensaje-cliente]="mensaje.esRespuesta === false"
+         [class.mensaje-agente]="mensaje.esRespuesta === true">
+      <div class="mensaje-header">
+        <span class="mensaje-emisor">{{ mensaje.esRespuesta === false ? 'Cliente' : 'Agente' }}</span>
+        <span class="mensaje-fecha">{{ mensaje.fecha | date: 'HH:mm' }}</span>
+      </div>
+      <div class="mensaje-texto">{{ mensaje.mensaje }}</div>
+    </div>
+  </div>
+
+  <div class="chat-input">
+    <input
+      type="text"
+      [(ngModel)]="nuevoMensaje"
+      (keyup.enter)="enviarMensaje()"
+      placeholder="Escribe un mensaje...">
+    <button (click)="enviarMensaje()">Enviar</button>
+  </div>
+</div>

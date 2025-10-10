@@ -1,0 +1,13 @@
+<div class="app-container">
+  <nav class="navbar">
+    <h1>{{ title }}</h1>
+    <div class="nav-links">
+      <a routerLink="/casos-abiertos" routerLinkActive="active">Casos abiertos</a>
+      <a routerLink="/casos-en-proceso" routerLinkActive="active">Casos en proceso</a>
+    </div>
+  </nav>
+
+  <main>
+    <router-outlet />
+  </main>
+</div>
