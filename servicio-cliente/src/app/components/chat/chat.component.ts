@@ -4,6 +4,7 @@ import { FormsModule } from '@angular/forms';
 import { CasosService } from '../../services/casos.service';
 import { Caso } from '../../models/caso.model';
 import { Mensaje } from '../../models/mensaje.model';
+import { WebSocketService } from '../../services/websocket.service';
 
 @Component({
   selector: 'app-chat',
@@ -19,10 +20,20 @@ export class ChatComponent implements OnInit {
   mensajes: Mensaje[] = [];
   nuevoMensaje: string = '';
 
-  constructor(private casosService: CasosService) {}
+  constructor(
+    private casosService: CasosService,
+    private wsService: WebSocketService
+  ) {}
 
   ngOnInit(): void {
     this.cargarMensajes();
+
+    this.wsService.suscribirACaso(this.caso.id).subscribe(
+      (newMensaje) => {
+        console.log('Nuevo mensaje recibido: ', newMensaje);
+        this.mensajes.push(newMensaje);
+      }
+    )
   }
 
   cargarMensajes(): void {

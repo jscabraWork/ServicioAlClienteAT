@@ -21,6 +21,9 @@
             "polyfills": [
               "zone.js"
             ],
+            "define": {
+              "global": "globalThis"
+            },
             "tsConfig": "tsconfig.app.json",
             "assets": [
               {

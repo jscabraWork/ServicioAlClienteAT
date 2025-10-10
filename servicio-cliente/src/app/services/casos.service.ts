@@ -43,6 +43,6 @@ export class CasosService {
   // Enviar un mensaje
   enviarMensaje(casoId: string, adminId: string, texto: string) {
     const params = { mensaje: texto };
-    return this.http.post<any>(`${this.apiUrl}/administradores/enviarMensaje/${casoId}/${adminId}`, null, { params });
+    return this.http.post<any>(`${this.apiUrl}/mensajes/enviarMensaje/${casoId}/${adminId}`, null, { params });
   }
 }
