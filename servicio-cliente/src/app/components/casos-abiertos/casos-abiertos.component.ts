@@ -25,7 +25,13 @@ export class CasosAbiertosComponent implements OnInit {
   cargarCasos(): void {
     this.casosService.getCasosAbiertos().subscribe({
       next: response => {
-        this.casos = response.casosAbiertos;
+        if (response.casosAbiertos == null) { 
+          alert(response.mensaje);
+        }
+        else { 
+          this.casos = response.casosAbiertos;
+          console.log(response.mensaje);
+        }
       }
     });
   }

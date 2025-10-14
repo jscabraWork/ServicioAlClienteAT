@@ -24,7 +24,13 @@ export class CasosEnProcesoComponent implements OnInit {
   cargarCasos(): void {
     this.casosService.getCasosEnProceso("1001117847").subscribe({
       next: response => {
-        this.casos = response.casosEnProceso;
+        if (response.casosEnProceso == null) {
+          alert(response.mensaje);
+        } else {
+          this.casos = response.casosEnProceso;
+          console.log(response.mensaje);
+        }
+        
       }
     });
   }
