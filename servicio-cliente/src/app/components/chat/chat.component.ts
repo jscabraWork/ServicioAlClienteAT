@@ -1,4 +1,4 @@
-import { Component, Input, Output, EventEmitter, OnInit } from '@angular/core';
+import { Component, Input, Output, EventEmitter, OnInit, ChangeDetectorRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { CasosService } from '../../services/casos.service';
@@ -22,7 +22,8 @@ export class ChatComponent implements OnInit {
 
   constructor(
     private casosService: CasosService,
-    private wsService: WebSocketService
+    private wsService: WebSocketService,
+    private cdr: ChangeDetectorRef
   ) {}
 
   ngOnInit(): void {
@@ -32,6 +33,7 @@ export class ChatComponent implements OnInit {
       (newMensaje) => {
         console.log('Nuevo mensaje recibido: ', newMensaje);
         this.mensajes.push(newMensaje);
+        this.cdr.detectChanges();
       }
     )
   }
@@ -48,7 +50,7 @@ export class ChatComponent implements OnInit {
     if (this.nuevoMensaje.trim()) {
       this.casosService.enviarMensaje(this.caso.id, "1001117847", this.nuevoMensaje).subscribe({
         next: response => {
-          this.mensajes.push(response.mensajeEnviado);
+          console.log(response.mensajeEnviado);
           this.nuevoMensaje = '';
         }
       });

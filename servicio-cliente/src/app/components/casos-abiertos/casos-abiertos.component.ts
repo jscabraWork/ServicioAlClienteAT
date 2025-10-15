@@ -1,8 +1,9 @@
-import { Component, OnInit } from '@angular/core';
+import { ChangeDetectorRef, Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { CasosService } from '../../services/casos.service';
 import { Caso } from '../../models/caso.model';
 import { ChatComponent } from '../chat/chat.component';
+import { WebSocketService } from '../../services/websocket.service';
 
 @Component({
   selector: 'app-casos-sin-resolver',
@@ -16,17 +17,29 @@ export class CasosAbiertosComponent implements OnInit {
   chatAbierto: boolean = false;
   casoSeleccionado: Caso | null = null;
 
-  constructor(private casosService: CasosService) {}
+  constructor(
+    private casosService: CasosService,
+    private wsService: WebSocketService,
+    private cdr: ChangeDetectorRef
+  ) {}
 
   ngOnInit(): void {
     this.cargarCasos();
+
+    this.wsService.obtenerNuevosCasos().subscribe(
+      (newMensaje) => {
+        console.log('Nuevo mensaje recibido: ', newMensaje);
+        this.casos.push(newMensaje);
+        this.cdr.detectChanges();
+      }
+    )
   }
 
   cargarCasos(): void {
     this.casosService.getCasosAbiertos().subscribe({
       next: response => {
         if (response.casosAbiertos == null) { 
-          alert(response.mensaje);
+          console.log(response.mensaje);
         }
         else { 
           this.casos = response.casosAbiertos;

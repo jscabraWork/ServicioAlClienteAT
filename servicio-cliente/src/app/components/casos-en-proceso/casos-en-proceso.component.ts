@@ -25,7 +25,7 @@ export class CasosEnProcesoComponent implements OnInit {
     this.casosService.getCasosEnProceso("1001117847").subscribe({
       next: response => {
         if (response.casosEnProceso == null) {
-          alert(response.mensaje);
+          console.log(response.mensaje);
         } else {
           this.casos = response.casosEnProceso;
           console.log(response.mensaje);

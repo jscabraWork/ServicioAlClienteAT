@@ -36,6 +36,34 @@ export class WebSocketService {
         }
     }
 
+    obtenerNuevosCasos(): Observable<any> {
+        const subject = new Subject<any>();
+
+        const suscribir = () => {
+            this.client.subscribe(`/topic/casos/nuevosCasos`, (message) => {
+                const caso = JSON.parse(message.body);
+                subject.next(caso);
+            });
+        };
+
+        if (this.conectado) {
+            suscribir();
+        } else {
+            const intervalo = setInterval(() => {
+                if (this.conectado) {
+                    suscribir();
+                    clearInterval(intervalo);
+                }
+            }, 100);
+        }
+
+        if (!this.client.active) {
+            this.client.activate();
+        }
+
+        return subject.asObservable();
+    }
+
     suscribirACaso(casoId: string): Observable<any> {
         const subject = new Subject<any>();
 
