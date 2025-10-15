@@ -1,10 +1,11 @@
 import { Component, Input, Output, EventEmitter, OnInit, ChangeDetectorRef } from '@angular/core';
-import { CommonModule } from '@angular/common';
+import { CommonModule, NgIf } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { CasosService } from '../../services/casos.service';
 import { Caso } from '../../models/caso.model';
 import { Mensaje } from '../../models/mensaje.model';
 import { WebSocketService } from '../../services/websocket.service';
+import { DomSanitizer, SafeUrl } from '@angular/platform-browser';
 
 @Component({
   selector: 'app-chat',
@@ -21,6 +22,7 @@ export class ChatComponent implements OnInit {
   nuevoMensaje: string = '';
 
   constructor(
+    private sanitizer: DomSanitizer,
     private casosService: CasosService,
     private wsService: WebSocketService,
     private cdr: ChangeDetectorRef
@@ -36,6 +38,30 @@ export class ChatComponent implements OnInit {
         this.cdr.detectChanges();
       }
     )
+  }
+
+  getImageUrl(mensaje: Mensaje): string {
+    this.casosService.obtenerMediaCompleto(mensaje.mediaId).subscribe({
+      next: response=>{
+        console.log(response);
+      }
+    })
+    const mimeType = mensaje.tipoContenido + '/jpeg';
+    return `data:${mimeType};base64,${mensaje.mediaId}`;
+  }
+
+  getAudioUrl(mensaje: Mensaje): SafeUrl {
+    const mimeType = mensaje.tipoContenido + '/ogg';
+    const dataUrl = `data:${mimeType};base64,${mensaje.mediaId}`;
+
+    return this.sanitizer.bypassSecurityTrustUrl(dataUrl);
+  }
+
+  getVideoUrl(mensaje: Mensaje): SafeUrl {
+    const mimeType = mensaje.tipoContenido + '/mp4';
+    const dataUrl = `data:${mimeType};base64,${mensaje.mediaId}`;
+
+    return this.sanitizer.bypassSecurityTrustUrl(dataUrl);
   }
 
   cargarMensajes(): void {

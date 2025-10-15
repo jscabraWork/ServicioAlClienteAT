@@ -45,4 +45,8 @@ export class CasosService {
     const params = { mensaje: texto };
     return this.http.post<any>(`${this.apiUrl}/mensajes/enviarMensaje/${casoId}/${adminId}`, null, { params });
   }
+
+  obtenerMediaCompleto(mediaId: string) {
+    return this.http.get<any>(`${this.apiUrl}/mensajes/mensajeAPIWhatsapp/${mediaId}`);
+  }
 }
