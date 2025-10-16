@@ -30,6 +30,13 @@ h2 {
   border-radius: 5px;
   padding: 15px;
   background: #fff;
+  transition: background-color 0.3s ease, border-color 0.3s ease;
+
+  &.caso-seleccionado {
+    background: #e3f2fd;
+    border-color: #90caf9;
+    box-shadow: 0 2px 8px rgba(33, 150, 243, 0.2);
+  }
 }
 
 .caso-header {

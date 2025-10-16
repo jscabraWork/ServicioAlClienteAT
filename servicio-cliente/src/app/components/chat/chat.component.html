@@ -7,7 +7,7 @@
     <button class="btn-cerrar-chat" (click)="cerrarChat()">✕</button>
   </div>
 
-  <div class="chat-mensajes">
+  <div class="chat-mensajes" #chatMensajes>
     <div *ngFor="let mensaje of mensajes"
          class="mensaje"
          [class.mensaje-cliente]="mensaje.esRespuesta === false"
@@ -18,22 +18,24 @@
       </div>
       <div class="mensaje-texto" *ngIf="mensaje.tipoContenido === 'text'">{{ mensaje.mensaje }}</div>
       <div class="mensaje-texto" *ngIf="mensaje.tipoContenido === 'image'">
-        <img 
-          [src]="getImageUrl(mensaje)"
+        <img
+          [src]="getMediaUrl(mensaje)"
           alt="Imagen"
+          loading="lazy"
+          (load)="onImagenCargada()"
         >
       </div>
       <div class="mensaje-texto" *ngIf="mensaje.tipoContenido === 'audio'">
         <audio 
           controls
-          [src]="getAudioUrl(mensaje)"
+          [src]="getMediaUrl(mensaje)"
           preload="metadata"
         ></audio>
       </div>
       <div class="mensaje-texto" *ngIf="mensaje.tipoContenido === 'video'">
         <video 
           controls
-          [src]="getVideoUrl(mensaje)"
+          [src]="getMediaUrl(mensaje)"
           preload="metadata"
         ></video>
       </div>

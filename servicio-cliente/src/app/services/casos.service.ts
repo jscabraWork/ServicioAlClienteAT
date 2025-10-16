@@ -47,6 +47,6 @@ export class CasosService {
   }
 
   obtenerMediaCompleto(mediaId: string) {
-    return this.http.get<any>(`${this.apiUrl}/mensajes/mensajeAPIWhatsapp/${mediaId}`);
+    return `${this.apiUrl}/mensajes/mensajeAPIWhatsapp/${mediaId}`;
   }
 }

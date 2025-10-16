@@ -1,26 +1,25 @@
 import { ChangeDetectorRef, Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { Router } from '@angular/router';
 import { CasosService } from '../../services/casos.service';
 import { Caso } from '../../models/caso.model';
-import { ChatComponent } from '../chat/chat.component';
 import { WebSocketService } from '../../services/websocket.service';
 
 @Component({
   selector: 'app-casos-sin-resolver',
   standalone: true,
-  imports: [CommonModule, ChatComponent],
+  imports: [CommonModule],
   templateUrl: './casos-abiertos.component.html',
   styleUrls: ['./casos-abiertos.component.scss']
 })
 export class CasosAbiertosComponent implements OnInit {
   casos: Caso[] = [];
-  chatAbierto: boolean = false;
-  casoSeleccionado: Caso | null = null;
 
   constructor(
     private casosService: CasosService,
     private wsService: WebSocketService,
-    private cdr: ChangeDetectorRef
+    private cdr: ChangeDetectorRef,
+    private router: Router
   ) {}
 
   ngOnInit(): void {
@@ -52,19 +51,12 @@ export class CasosAbiertosComponent implements OnInit {
   atenderCaso(casoId: string): void {
     this.casosService.atenderCaso(casoId, '1001117847').subscribe({
       next: response => {
-        // Buscar el caso completo con sus mensajes
-        const caso = this.casos.find(c => c.id === casoId);
-        if (caso) {
-          this.casoSeleccionado = caso;
-          this.chatAbierto = true;
-        }
         alert('Caso atendido exitosamente');
+        // Navegar a casos-en-proceso con el ID del caso
+        this.router.navigate(['/casos-en-proceso'], {
+          state: { casoId: casoId }
+        });
       }
     });
-  }
-
-  cerrarChat(): void {
-    this.chatAbierto = false;
-    this.casoSeleccionado = null;
   }
 }

@@ -19,18 +19,32 @@ export class CasosEnProcesoComponent implements OnInit {
 
   ngOnInit(): void {
     this.cargarCasos();
+
+    // Verificar si se recibió un casoId desde la navegación
+    const state = history.state as { casoId: string };
+
+    if (state?.casoId) {
+      // Esperar a que se carguen los casos y luego abrir el chat
+      setTimeout(() => {
+        const caso = this.casos.find(c => c.id === state.casoId);
+        if (caso) {
+          this.abrirChat(caso);
+        }
+      }, 500);
+    }
   }
 
   cargarCasos(): void {
     this.casosService.getCasosEnProceso("1001117847").subscribe({
       next: response => {
         if (response.casosEnProceso == null) {
+          this.casos = [];
           console.log(response.mensaje);
         } else {
           this.casos = response.casosEnProceso;
           console.log(response.mensaje);
         }
-        
+
       }
     });
   }
