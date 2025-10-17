@@ -1,11 +1,10 @@
 import { Component, Input, Output, EventEmitter, OnInit, ChangeDetectorRef, ViewChild, ElementRef, AfterViewChecked } from '@angular/core';
-import { CommonModule, NgIf } from '@angular/common';
+import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { CasosService } from '../../services/casos.service';
 import { Caso } from '../../models/caso.model';
 import { Mensaje } from '../../models/mensaje.model';
 import { WebSocketService } from '../../services/websocket.service';
-import { DomSanitizer, SafeUrl } from '@angular/platform-browser';
 
 @Component({
   selector: 'app-chat',
@@ -16,7 +15,9 @@ import { DomSanitizer, SafeUrl } from '@angular/platform-browser';
 })
 export class ChatComponent implements OnInit, AfterViewChecked {
   @Input() caso!: Caso;
+  @Input() modoSoloLectura: boolean = false;
   @Output() cerrar = new EventEmitter<void>();
+  @Output() nuevoMensajeRecibido = new EventEmitter<Mensaje>();
   @ViewChild('chatMensajes') private chatMensajesContainer!: ElementRef;
 
   mensajes: Mensaje[] = [];
@@ -35,7 +36,6 @@ export class ChatComponent implements OnInit, AfterViewChecked {
   intervaloGrabacion: any;
 
   constructor(
-    private sanitizer: DomSanitizer,
     private casosService: CasosService,
     private wsService: WebSocketService,
     private cdr: ChangeDetectorRef
@@ -48,6 +48,7 @@ export class ChatComponent implements OnInit, AfterViewChecked {
       (newMensaje) => {
         console.log('Nuevo mensaje recibido: ', newMensaje);
         this.mensajes.push(newMensaje);
+        this.nuevoMensajeRecibido.emit(newMensaje);
         this.debeHacerScroll = true;
         this.cdr.detectChanges();
       }

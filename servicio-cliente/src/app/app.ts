@@ -1,9 +1,10 @@
 import { Component } from '@angular/core';
 import { RouterOutlet, RouterLink, RouterLinkActive } from '@angular/router';
+import { MenuAdminComponent } from './components/menu-admin/menu-admin.component';
 
 @Component({
   selector: 'app-root',
-  imports: [RouterOutlet, RouterLink, RouterLinkActive],
+  imports: [RouterOutlet, MenuAdminComponent],
   templateUrl: './app.html',
   styleUrl: './app.scss'
 })

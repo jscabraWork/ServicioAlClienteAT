@@ -25,6 +25,10 @@ export class CasosService {
     return this.http.get<any>(`${this.apiUrl}/casos/obtenerCasosEnProceso/${adminId}`);
   }
 
+  getCasosCerrados(adminId: string) {
+    return this.http.get<any>(`${this.apiUrl}/casos/obtenerCasosCerrados/${adminId}`);
+  }
+
   // asignarCaso
   atenderCaso(casoId: string, adminId: string) {
     return this.http.put<any>(`${this.apiUrl}/administradores/asignarAdminCaso/${casoId}/${adminId}`, {});

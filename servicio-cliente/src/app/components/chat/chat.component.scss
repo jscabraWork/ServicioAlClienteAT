@@ -1,10 +1,16 @@
+@use '../../../styles/variables' as v;
+
 .chat-container {
-  width: 100%;
+  position: absolute;
+  right: 0;
+  top: 0;
   height: 100%;
+  width: 74%;
   border-left: 1px solid #ddd;
   display: flex;
   flex-direction: column;
   background: #fff;
+  overflow: hidden;
 }
 
 .chat-header {
@@ -43,26 +49,27 @@
 .chat-mensajes {
   flex: 1;
   overflow-y: auto;
+  overflow-x: hidden;
   padding: 15px;
   display: flex;
   flex-direction: column;
   gap: 10px;
+  min-height: 0;
 }
 
 .mensaje {
   max-width: 80%;
   padding: 10px;
   border-radius: 5px;
+  background: #e0e0e0;
 }
 
 .mensaje-cliente {
   align-self: flex-start;
-  background: #e3f2fd;
 }
 
 .mensaje-agente {
   align-self: flex-end;
-  background: #e8f5e9;
 }
 
 .mensaje-header {
@@ -74,11 +81,11 @@
 
 .mensaje-emisor {
   font-weight: bold;
-  color: #333;
+  color: v.$color-primario;
 }
 
 .mensaje-fecha {
-  color: #666;
+  color: #333;
 }
 
 .mensaje-texto {
@@ -96,6 +103,17 @@
   display: flex;
   flex-direction: column;
   gap: 8px;
+  flex-shrink: 0;
+
+  .conversacion-cerrada {
+    text-align: center;
+    padding: 12px;
+    background: #f5f5f5;
+    border-radius: 8px;
+    color: #666;
+    font-size: 14px;
+    font-weight: 500;
+  }
 
   .archivo-preview {
     display: flex;

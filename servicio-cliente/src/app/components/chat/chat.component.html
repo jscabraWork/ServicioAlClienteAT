@@ -42,7 +42,15 @@
     </div>
   </div>
 
-  <div class="chat-input">
+  <!-- Modo solo lectura -->
+  <div class="chat-input" *ngIf="modoSoloLectura">
+    <div class="conversacion-cerrada">
+      Esta conversación se ha cerrado
+    </div>
+  </div>
+
+  <!-- Modo normal -->
+  <div class="chat-input" *ngIf="!modoSoloLectura">
     <!-- Indicador de archivo seleccionado -->
     <div *ngIf="archivoSeleccionado" class="archivo-preview">
       <span>{{ archivoSeleccionado.name }}</span>

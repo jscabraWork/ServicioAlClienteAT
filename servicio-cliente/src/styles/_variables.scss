@@ -1,0 +1,76 @@
+// _variables.scss
+@use "sass:color";
+@use "sass:map";
+
+// Fuentes
+$font-primary: 'Inter';
+$font-secondary: 'Montserrat';
+$font-tertiary: 'Lato';
+
+// Colores - Nueva paleta
+$color-primario: #ED701C;
+$color-secundario: #0f2335;
+$color-contraste: #f7dba7;
+
+$color-primario-light: rgba(230, 142, 83, 0.758);
+
+$color-negro: #1A1A1A;
+$color-negro-soft: #2D2D2D;
+$color-gris-dark: #404040;
+$color-gris: #d6d6d6;
+$color-gris-light: #e2e2e2;
+$color-gris-muy-light: #F5F5F5;
+
+$color-blanco: #FFFFFF;
+$color-error: #dc3545;
+$color-success: #28a745;
+$color-warning: #ffc107;
+
+// Variables para compatibilidad (mantener mientras se migra)
+$color-base: $color-secundario;
+
+// Espaciados (versión simplificada y funcional)
+$spacer: 1rem;
+$spacer-0: 0;
+$spacer-1: $spacer * 0.25;
+$spacer-2: $spacer * 0.5;
+$spacer-3: $spacer;
+$spacer-4: $spacer * 1.5;
+$spacer-5: $spacer * 3;
+
+// Mapa de espaciados 
+$spacers: (
+  "0": $spacer-0,
+  "1": $spacer-1,
+  "2": $spacer-2,
+  "3": $spacer-3,
+  "4": $spacer-4,
+  "5": $spacer-5
+);
+
+// Border radius
+$border-radius: 4px;
+
+// Breakpoints
+$mobile-breakpoint: 768px;
+$tablet-breakpoint: 1024px;
+$desktop-breakpoint: 1200px;
+
+// Dimensiones del sidebar
+$sidebar-width: 225px;
+$sidebar-width-collapsed: 70px;
+$transition-duration: 0.3s;
+
+// Alturas de navegación
+$topbar-height: 50px;
+$mobile-header-height: 3.75rem;
+
+// Z-index
+$z-index: (
+  "overlay": 999,
+  "sidebar": 1000,
+  "topbar": 1000
+);
+
+// Border radius
+$border-radius-xl: 24px;
