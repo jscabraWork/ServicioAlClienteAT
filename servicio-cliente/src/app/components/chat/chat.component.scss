@@ -94,27 +94,162 @@
   padding: 15px;
   border-top: 1px solid #ddd;
   display: flex;
-  gap: 10px;
+  flex-direction: column;
+  gap: 8px;
 
-  input {
-    flex: 1;
-    padding: 8px;
-    border: 1px solid #ddd;
-    border-radius: 4px;
-    font-size: 14px;
+  .archivo-preview {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 8px 12px;
+    background: #f5f5f5;
+    border-radius: 20px;
+    font-size: 13px;
+
+    span {
+      flex: 1;
+      color: #555;
+    }
+
+    button {
+      padding: 2px 6px;
+      background: transparent;
+      color: #666;
+      border: none;
+      border-radius: 50%;
+      cursor: pointer;
+      font-size: 16px;
+      transition: all 0.2s;
+
+      &:hover {
+        background: #e0e0e0;
+        color: #333;
+      }
+    }
   }
 
-  button {
-    padding: 8px 16px;
-    background: #2196F3;
-    color: white;
-    border: none;
-    border-radius: 4px;
-    cursor: pointer;
-    font-size: 14px;
+  .grabando-indicador {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 12px;
+    background: #fff3e0;
+    border-radius: 20px;
+    font-size: 13px;
+    color: #e65100;
+    font-weight: 500;
 
-    &:hover {
-      background: #0b7dda;
+    .pulso {
+      animation: pulso 1.5s infinite;
     }
+  }
+
+  .input-wrapper {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    background: #f5f5f5;
+    border-radius: 24px;
+    padding: 6px 6px 6px 12px;
+
+    .btn-icon {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      width: 36px;
+      height: 36px;
+      background: transparent;
+      border: none;
+      border-radius: 50%;
+      cursor: pointer;
+      color: #666;
+      transition: all 0.2s;
+
+      svg {
+        width: 20px;
+        height: 20px;
+      }
+
+      &:hover:not(:disabled) {
+        background: #e0e0e0;
+        color: #333;
+      }
+
+      &:disabled {
+        opacity: 0.4;
+        cursor: not-allowed;
+      }
+
+      &.grabando {
+        color: #f44336;
+        animation: pulso-button 1.5s infinite;
+      }
+    }
+
+    input[type="text"] {
+      flex: 1;
+      padding: 10px 12px;
+      border: none;
+      background: transparent;
+      font-size: 14px;
+      outline: none;
+
+      &::placeholder {
+        color: #999;
+      }
+
+      &:disabled {
+        opacity: 0.6;
+        cursor: not-allowed;
+      }
+    }
+
+    .btn-enviar {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      width: 36px;
+      height: 36px;
+      background: #2196F3;
+      border: none;
+      border-radius: 50%;
+      cursor: pointer;
+      color: white;
+      transition: all 0.2s;
+
+      svg {
+        width: 18px;
+        height: 18px;
+      }
+
+      &:hover:not(:disabled) {
+        background: #0b7dda;
+        transform: scale(1.05);
+      }
+
+      &:disabled {
+        background: #ccc;
+        cursor: not-allowed;
+        transform: scale(1);
+      }
+    }
+  }
+}
+
+@keyframes pulso {
+  0%, 100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.3;
+  }
+}
+
+@keyframes pulso-button {
+  0%, 100% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.1);
   }
 }

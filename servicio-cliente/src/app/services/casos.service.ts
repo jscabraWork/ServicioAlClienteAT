@@ -46,6 +46,15 @@ export class CasosService {
     return this.http.post<any>(`${this.apiUrl}/mensajes/enviarMensaje/${casoId}/${adminId}`, null, { params });
   }
 
+  // Enviar mensaje con archivo (imagen, video, audio)
+  enviarMensajeConArchivo(casoId: string, adminId: string, archivo: File, tipoContenido: 'image' | 'audio') {
+    const formData = new FormData();
+    formData.append('file', archivo);
+    formData.append('tipoContenido', tipoContenido);
+
+    return this.http.post<any>(`${this.apiUrl}/mensajes/enviarMensajeMultimedia/${casoId}/${adminId}`, formData);
+  }
+
   obtenerMediaCompleto(mediaId: string) {
     return `${this.apiUrl}/mensajes/mensajeAPIWhatsapp/${mediaId}`;
   }

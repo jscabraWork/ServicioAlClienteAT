@@ -92,6 +92,34 @@ export class WebSocketService {
         return subject.asObservable();
     }
 
+    suscribirACasosAtendidos(): Observable<any> {
+        const subject = new Subject<any>();
+
+        const suscribir = () => {
+            this.client.subscribe(`/topic/casos/atendidos`, (message) => {
+                const casoAtendido = JSON.parse(message.body);
+                subject.next(casoAtendido);
+            });
+        };
+
+        if (this.conectado) {
+            suscribir();
+        } else {
+            const intervalo = setInterval(() => {
+                if (this.conectado) {
+                    suscribir();
+                    clearInterval(intervalo);
+                }
+            }, 100);
+        }
+
+        if (!this.client.active) {
+            this.client.activate();
+        }
+
+        return subject.asObservable();
+    }
+
     desconectar() {
         if (this.client.active) {
             this.client.deactivate();
