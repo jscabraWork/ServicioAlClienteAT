@@ -44,15 +44,18 @@ export class ChatComponent implements OnInit, AfterViewChecked {
   ngOnInit(): void {
     this.cargarMensajes();
 
-    this.wsService.suscribirACaso(this.caso.id).subscribe(
-      (newMensaje) => {
-        console.log('Nuevo mensaje recibido: ', newMensaje);
-        this.mensajes.push(newMensaje);
-        this.nuevoMensajeRecibido.emit(newMensaje);
-        this.debeHacerScroll = true;
-        this.cdr.detectChanges();
-      }
-    )
+    // Solo suscribirse a WebSocket si NO está en modo solo lectura
+    if (!this.modoSoloLectura) {
+      this.wsService.suscribirACaso(this.caso.id).subscribe(
+        (newMensaje) => {
+          console.log('Nuevo mensaje recibido: ', newMensaje);
+          this.mensajes.push(newMensaje);
+          this.nuevoMensajeRecibido.emit(newMensaje);
+          this.debeHacerScroll = true;
+          this.cdr.detectChanges();
+        }
+      )
+    }
   }
 
   ngAfterViewChecked(): void {

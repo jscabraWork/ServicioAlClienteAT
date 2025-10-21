@@ -7,11 +7,13 @@
 </header>
 
 <!-- Sidebar -->
-<aside [ngClass]="{'sidebar': true, 'collapsed': isCollapsed, 'mobile': isMobile}">
+<aside [ngClass]="{'sidebar': true, 'collapsed': isCollapsed, 'mobile': isMobile}"
+       (mouseenter)="onMouseEnter()"
+       (mouseleave)="onMouseLeave()">
   <!-- Sidebar Header -->
   <div class="sidebar-header">
     <img src="assets/logo.png" alt="Logo" class="logo-icon" *ngIf="isMobile || !isCollapsed" />
-    <button class="toggle-btn" (click)="toggleSidebar()">
+    <button class="toggle-btn" (click)="toggleSidebar()" *ngIf="isMobile">
       <span></span>
       <span></span>
       <span></span>
@@ -21,7 +23,7 @@
   <!-- Sidebar Menu -->
   <nav class="sidebar-menu" [class.collapsed]="isCollapsed && isMobile">
     <ng-container *ngFor="let item of navItems">
-      <a [routerLink]="item.route" 
+      <a [routerLink]="item.route"
          class="menu-item"
          [class.logout]="item.isLogout === true"
          routerLinkActive="active"
