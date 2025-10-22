@@ -41,8 +41,21 @@ export class MenuAdminComponent implements OnInit {
   private checkScreenSize() {
     this.isMobile = window.innerWidth <= 768;
     if (this.isMobile) this.isCollapsed = true;
+    else this.isCollapsed = true; // Desktop: collapsed by default
   }
 
   toggleSidebar() { this.isCollapsed = !this.isCollapsed; }
   closeSidebar() { if (this.isMobile) this.isCollapsed = true; }
+
+  onMouseEnter() {
+    if (!this.isMobile) {
+      this.isCollapsed = false;
+    }
+  }
+
+  onMouseLeave() {
+    if (!this.isMobile) {
+      this.isCollapsed = true;
+    }
+  }
 }
