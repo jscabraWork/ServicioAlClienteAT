@@ -1,10 +1,11 @@
-import { Component, Input, Output, EventEmitter, OnInit, ChangeDetectorRef, ViewChild, ElementRef, AfterViewChecked } from '@angular/core';
+import { Component, Input, Output, EventEmitter, OnInit, OnChanges, SimpleChanges, ChangeDetectorRef, ViewChild, ElementRef, AfterViewChecked } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { CasosService } from '../../services/casos.service';
 import { Caso } from '../../models/caso.model';
 import { Mensaje } from '../../models/mensaje.model';
 import { WebSocketService } from '../../services/websocket.service';
+import { MensajesService } from '../../services/mensajes.service';
 
 @Component({
   selector: 'app-chat',
@@ -13,7 +14,7 @@ import { WebSocketService } from '../../services/websocket.service';
   templateUrl: './chat.component.html',
   styleUrls: ['./chat.component.scss']
 })
-export class ChatComponent implements OnInit, AfterViewChecked {
+export class ChatComponent implements OnInit, OnChanges, AfterViewChecked {
   @Input() caso!: Caso;
   @Input() modoSoloLectura: boolean = false;
   @Output() cerrar = new EventEmitter<void>();
@@ -35,8 +36,14 @@ export class ChatComponent implements OnInit, AfterViewChecked {
   tiempoGrabacion: number = 0;
   intervaloGrabacion: any;
 
+  // Propiedades para modal de multimedia
+  modalAbierto: boolean = false;
+  modalUrl: any = null;
+  modalTipo: 'image' | 'video' | null = null;
+
   constructor(
     private casosService: CasosService,
+    private mensajesService: MensajesService,
     private wsService: WebSocketService,
     private cdr: ChangeDetectorRef
   ) {}
@@ -55,6 +62,13 @@ export class ChatComponent implements OnInit, AfterViewChecked {
           this.cdr.detectChanges();
         }
       )
+    }
+  }
+
+  ngOnChanges(changes: SimpleChanges): void {
+    // Detectar cuando cambia el caso y recargar los mensajes
+    if (changes['caso'] && !changes['caso'].firstChange) {
+      this.cargarMensajes();
     }
   }
 
@@ -94,12 +108,18 @@ export class ChatComponent implements OnInit, AfterViewChecked {
     }
   }
 
+  onVideoLoaded(event: Event): void {
+    // Cuando el video carga los metadatos, mostrar el primer frame
+    const video = event.target as HTMLVideoElement;
+    video.currentTime = 0.1; // Cargar un frame inicial para la miniatura
+  }
+
   getMediaUrl(mensaje: Mensaje): any {
-    return this.casosService.obtenerMediaCompleto(mensaje.mediaId);
+    return this.mensajesService.obtenerMediaCompleto(mensaje.mediaId);
   }
 
   cargarMensajes(): void {
-    this.casosService.getMensajesPorCaso(this.caso.id).subscribe({
+    this.mensajesService.getMensajesPorCaso(this.caso.id).subscribe({
       next: response => {
         this.mensajes = response.mensajes;
         this.debeHacerScroll = true;
@@ -348,7 +368,7 @@ export class ChatComponent implements OnInit, AfterViewChecked {
         audioFile = await this.comprimirAudio(audioFile);
       }
 
-      this.casosService.enviarMensajeConArchivo(this.caso.id, "1001117847", audioFile, 'audio').subscribe({
+      this.mensajesService.enviarMensajeConArchivo(this.caso.id, "1001117847", audioFile, 'audio').subscribe({
         next: (response: any) => {
           console.log('Audio enviado:', response);
           this.debeHacerScroll = true;
@@ -367,7 +387,7 @@ export class ChatComponent implements OnInit, AfterViewChecked {
   enviarMensaje(): void {
     // Si hay una imagen seleccionada, enviarla
     if (this.archivoSeleccionado) {
-      this.casosService.enviarMensajeConArchivo(
+      this.mensajesService.enviarMensajeConArchivo(
         this.caso.id,
         "1001117847",
         this.archivoSeleccionado,
@@ -386,7 +406,7 @@ export class ChatComponent implements OnInit, AfterViewChecked {
     }
     // Si hay texto, enviar mensaje de texto
     else if (this.nuevoMensaje.trim()) {
-      this.casosService.enviarMensaje(this.caso.id, "1001117847", this.nuevoMensaje).subscribe({
+      this.mensajesService.enviarMensaje(this.caso.id, "1001117847", this.nuevoMensaje).subscribe({
         next: response => {
           console.log(response.mensajeEnviado);
           this.nuevoMensaje = '';
@@ -398,5 +418,30 @@ export class ChatComponent implements OnInit, AfterViewChecked {
 
   cerrarChat(): void {
     this.cerrar.emit();
+  }
+
+  abrirModal(event: Event, url: any, tipo: 'image' | 'video'): void {
+    event.stopPropagation();
+    event.preventDefault();
+    this.modalUrl = url;
+    this.modalTipo = tipo;
+    this.modalAbierto = true;
+    console.log('Modal abierto:', tipo, url);
+  }
+
+  cerrarModal(): void {
+    this.modalAbierto = false;
+
+    // Pausar video si estaba reproduciéndose
+    if (this.modalTipo === 'video') {
+      const videos = document.querySelectorAll('.modal-multimedia video');
+      videos.forEach((video: any) => {
+        video.pause();
+        video.currentTime = 0;
+      });
+    }
+
+    this.modalUrl = null;
+    this.modalTipo = null;
   }
 }

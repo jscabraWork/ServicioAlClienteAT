@@ -29,37 +29,13 @@ export class CasosService {
     return this.http.get<any>(`${this.apiUrl}/casos/obtenerCasosCerrados/${adminId}`);
   }
 
-  // asignarCaso
-  atenderCaso(casoId: string, adminId: string) {
-    return this.http.put<any>(`${this.apiUrl}/administradores/asignarAdminCaso/${casoId}/${adminId}`, {});
-  }
-
   // Cerrar un caso
   cerrarCaso(casoId: string, adminId: string) {
     return this.http.put<any>(`${this.apiUrl}/casos/cerrarCaso/${casoId}/${adminId}`, {});
   }
 
-  // Obtener mensajes de un caso
-  getMensajesPorCaso(casoId: string) {
-    return this.http.get<any>(`${this.apiUrl}/mensajes/mensajesChat/${casoId}`);
-  }
-
-  // Enviar un mensaje
-  enviarMensaje(casoId: string, adminId: string, texto: string) {
-    const params = { mensaje: texto };
-    return this.http.post<any>(`${this.apiUrl}/mensajes/enviarMensaje/${casoId}/${adminId}`, null, { params });
-  }
-
-  // Enviar mensaje con archivo (imagen, video, audio)
-  enviarMensajeConArchivo(casoId: string, adminId: string, archivo: File, tipoContenido: 'image' | 'audio') {
-    const formData = new FormData();
-    formData.append('file', archivo);
-    formData.append('tipoContenido', tipoContenido);
-
-    return this.http.post<any>(`${this.apiUrl}/mensajes/enviarMensajeMultimedia/${casoId}/${adminId}`, formData);
-  }
-
-  obtenerMediaCompleto(mediaId: string) {
-    return `${this.apiUrl}/mensajes/mensajeAPIWhatsapp/${mediaId}`;
+  // Crear nuevo caso para nueva conversacion
+  crearNuevoCaso(usuarioWhatsapp: string, tipo: string) {
+    return this.http.post<any>(`${this.apiUrl}/casos/${usuarioWhatsapp}/${tipo}`, {});
   }
 }

@@ -14,29 +14,35 @@
          [class.mensaje-agente]="mensaje.esRespuesta === true">
       <div class="mensaje-header">
         <span class="mensaje-emisor">{{ mensaje.esRespuesta === false ? 'Cliente' : 'Agente' }}</span>
-        <span class="mensaje-fecha">{{ mensaje.fecha | date: 'HH:mm' }}</span>
+        <span class="mensaje-fecha">{{ mensaje.fecha | date: 'hh:mm a' }}</span>
       </div>
       <div class="mensaje-texto" *ngIf="mensaje.tipoContenido === 'text'">{{ mensaje.mensaje }}</div>
       <div class="mensaje-texto" *ngIf="mensaje.tipoContenido === 'image'">
         <img
+          class="imagen-miniatura"
           [src]="getMediaUrl(mensaje)"
           alt="Imagen"
           loading="lazy"
           (load)="onImagenCargada()"
+          (click)="abrirModal($event, getMediaUrl(mensaje), 'image')"
         >
       </div>
       <div class="mensaje-texto" *ngIf="mensaje.tipoContenido === 'audio'">
-        <audio 
+        <audio
           controls
           [src]="getMediaUrl(mensaje)"
           preload="metadata"
         ></audio>
       </div>
       <div class="mensaje-texto" *ngIf="mensaje.tipoContenido === 'video'">
-        <video 
-          controls
+        <video
+          class="video-miniatura"
           [src]="getMediaUrl(mensaje)"
           preload="metadata"
+          muted
+          playsinline
+          (click)="abrirModal($event, getMediaUrl(mensaje), 'video')"
+          (loadedmetadata)="onVideoLoaded($event)"
         ></video>
       </div>
     </div>
@@ -105,6 +111,15 @@
         </button>
       </div>
     </div>
-    
+
+  </div>
+</div>
+
+<!-- Modal para ver imágenes y videos en grande -->
+<div class="modal-multimedia" *ngIf="modalAbierto" (click)="cerrarModal()" (mousedown)="$event.stopPropagation()">
+  <div class="modal-contenido" (click)="$event.stopPropagation()" (mousedown)="$event.stopPropagation()">
+    <button class="btn-cerrar-modal" (click)="cerrarModal()">✕</button>
+    <img *ngIf="modalTipo === 'image'" [src]="modalUrl" alt="Imagen ampliada" (click)="$event.stopPropagation()">
+    <video *ngIf="modalTipo === 'video'" [src]="modalUrl" controls autoplay (click)="$event.stopPropagation()"></video>
   </div>
 </div>

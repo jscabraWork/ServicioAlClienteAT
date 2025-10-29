@@ -16,6 +16,9 @@ export class CasosCerradosComponent implements OnInit {
   casos: Caso[] = [];
   casoSeleccionado: Caso | null = null;
 
+  filtro: string = '';
+  todosLosCasos: Caso[] = [];
+
   constructor(
     private casosService: CasosService,
     private cdr: ChangeDetectorRef
@@ -29,7 +32,8 @@ export class CasosCerradosComponent implements OnInit {
     this.casosService.getCasosCerrados("1001117847").subscribe({
       next: response => {
         if (response?.casosTerminados) {
-          this.casos = response.casosTerminados;
+          this.todosLosCasos = response.casosTerminados;
+          this.casos = [...this.todosLosCasos];
           this.ordenarCasosPorFecha();
           console.log(response.mensaje);
         } else {
@@ -56,13 +60,34 @@ export class CasosCerradosComponent implements OnInit {
     this.casoSeleccionado = null;
   }
 
-  obtenerHora(fecha: Date): string {
+  obtenerHora(caso: Caso): string {
+    // Obtener la fecha del último mensaje
+    const ultimoMensaje = caso.mensajes[caso.mensajes.length - 1];
+    const fecha = ultimoMensaje?.fecha || caso.fecha;
+
     const date = new Date(fecha);
+    const day = date.getDate();
+    const months = ['Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun', 'Jul', 'Ago', 'Sep', 'Oct', 'Nov', 'Dic'];
+    const month = months[date.getMonth()];
     const hours = date.getHours();
     const minutes = date.getMinutes();
     const ampm = hours >= 12 ? 'pm' : 'am';
     const hours12 = hours % 12 || 12;
     const minutesStr = minutes < 10 ? '0' + minutes : minutes;
-    return `${hours12}:${minutesStr}${ampm}`;
+    return `${day}/${month} ${hours12}:${minutesStr}${ampm}`;
+  }
+
+  filtrarCasos(): void {
+    const texto = this.filtro.trim().toLowerCase();
+
+    if(texto === ''){
+      this.casos = [...this.todosLosCasos];
+    } else {
+      this.casos = this.todosLosCasos.filter(caso => 
+        caso.numeroUsuario.toString().toLowerCase().includes(texto)
+      )
+    }
+
+    this.ordenarCasosPorFecha();
   }
 }

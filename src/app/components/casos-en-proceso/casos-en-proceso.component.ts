@@ -1,4 +1,4 @@
-import { ChangeDetectorRef, Component, OnInit } from '@angular/core';
+import { ChangeDetectorRef, Component, NgZone, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { CasosService } from '../../services/casos.service';
@@ -6,6 +6,8 @@ import { Caso } from '../../models/caso.model';
 import { ChatComponent } from '../chat/chat.component';
 import { WebSocketService } from '../../services/websocket.service';
 import { forkJoin } from 'rxjs';
+import { MensajesService } from '../../services/mensajes.service';
+import { AdministradoresService } from '../../services/administradores.service';
 
 @Component({
   selector: 'app-casos-asignados',
@@ -19,22 +21,46 @@ export class CasosEnProcesoComponent implements OnInit {
   casoSeleccionado: Caso | null = null;
   ultimosMensajes: Map<string, string> = new Map();
 
+  filtro: string = '';
+  todosLosCasos: Caso[] = [];
+
   constructor(
     private casosService: CasosService,
+    private adminService: AdministradoresService,
     private cdr: ChangeDetectorRef,
-    private wsService: WebSocketService
+    private wsService: WebSocketService,
+    private ngZone: NgZone
   ) {}
 
   ngOnInit(): void {
     this.cargarCasos();
-    
+
     // WebSocket para mostrar nuevos casos que aparecen
     this.wsService.obtenerNuevosCasos().subscribe(newCaso => {
       console.log('Nuevo caso recibido:', newCaso);
-      this.agregarCasos([newCaso]);
+      // Solo agregar si no existe ya en la lista
+      const existe = this.casos.some(c => c.id === newCaso.id);
+      if (!existe) {
+        this.ngZone.run(() => {
+          this.todosLosCasos = [...this.casos, newCaso];
+          this.casos = [...this.todosLosCasos];
+          console.log('Casos actualizados:', this.casos);
+
+          this.cdr.markForCheck();
+        })
+        
+      }
     });
 
-    
+    // WebSocket para casos atendidos (actualizar estado)
+    this.wsService.suscribirACasosAtendidos().subscribe(casoAtendido => {
+      console.log('Caso atendido:', casoAtendido);
+      const casoIndex = this.casos.findIndex(c => c.id === casoAtendido.id);
+      if (casoIndex !== -1) {
+        this.casos[casoIndex].estado = 1;
+        this.cdr.detectChanges();
+      }
+    });
 
     // Verificar si se recibió un casoId desde la navegación
     const state = history.state as { casoId: string };
@@ -72,19 +98,21 @@ export class CasosEnProcesoComponent implements OnInit {
         console.log(abiertos?.mensaje || 'Sin casos abiertos.');
       }
 
+      // Limpiar el array antes de agregar para evitar duplicados
+      this.casos = [];
       this.agregarCasos(nuevosCasos);
     });
   }
 
   private agregarCasos(nuevosCasos: any[]): void {
-    this.casos.push(...nuevosCasos);
+    this.todosLosCasos = [...this.casos, ...nuevosCasos];
+    this.casos = [...this.todosLosCasos];
     this.ordenarCasosPorFecha();
-    this.cdr.detectChanges(); // Si realmente lo necesitas
   }
 
   private ordenarCasosPorFecha(): void {
     this.casos.sort(
-      (a, b) => new Date(a.fecha).getTime() - new Date(b.fecha).getTime()
+      (a, b) => new Date(b.fecha).getTime() - new Date(a.fecha).getTime()
     );
   }
 
@@ -104,26 +132,47 @@ export class CasosEnProcesoComponent implements OnInit {
     if (confirm('¿Está seguro de cerrar este caso?')) {
       this.casosService.cerrarCaso(casoId, "1001117847").subscribe({
         next: response => {
-          this.cargarCasos();
           if (this.casoSeleccionado?.id === casoId) {
             this.cerrarChat();
           }
+
+          this.casos = this.casos.filter(caso => caso.id !== casoId);
+
+          this.cdr.detectChanges();
+
+          alert('Caso cerrado exitosamente')
+        },
+        error: err => {
+          console.error('Error al cerrar el caso:', err);
+          alert('Hubo un error al cerrar el caso');
         }
       });
     }
   }
 
-  obtenerHora(fecha: Date): string {
+  obtenerHora(caso: Caso): string {
+    // Obtener la fecha del último mensaje
+    const tieneMensajes = Array.isArray(caso.mensajes) && caso.mensajes.length > 0;
+    const fecha = tieneMensajes
+      ? caso.mensajes[caso.mensajes.length - 1].fecha
+      : caso.fecha;
+
     const date = new Date(fecha);
+    const day = date.getDate();
+    const months = ['Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun', 'Jul', 'Ago', 'Sep', 'Oct', 'Nov', 'Dic'];
+    const month = months[date.getMonth()];
     const hours = date.getHours();
     const minutes = date.getMinutes();
     const ampm = hours >= 12 ? 'pm' : 'am';
     const hours12 = hours % 12 || 12;
     const minutesStr = minutes < 10 ? '0' + minutes : minutes;
-    return `${hours12}:${minutesStr}${ampm}`;
+    return `${day}/${month} ${hours12}:${minutesStr}${ampm}`;
   }
 
   obtenerUltimoMensaje(caso: Caso): string {
+    if (!Array.isArray(caso.mensajes) || caso.mensajes.length === 0) {
+      return '(Sin mensajes)';
+    }
     return caso.mensajes[caso.mensajes.length - 1].mensaje;
   }
 
@@ -131,6 +180,9 @@ export class CasosEnProcesoComponent implements OnInit {
     // Buscar el caso en la lista y actualizar su último mensaje
     const casoIndex = this.casos.findIndex(c => c.id === this.casoSeleccionado?.id);
     if (casoIndex !== -1) {
+      if (!Array.isArray(this.casos[casoIndex].mensajes)) {
+        this.casos[casoIndex].mensajes = [];
+      }
       this.casos[casoIndex].mensajes.push(nuevoMensaje);
     }
   }
@@ -148,7 +200,7 @@ export class CasosEnProcesoComponent implements OnInit {
   }
 
   atenderCaso(casoId: string): void {
-    this.casosService.atenderCaso(casoId, '1001117847').subscribe({
+    this.adminService.atenderCaso(casoId, '1001117847').subscribe({
       next: response => {
         alert('Caso atendido exitosamente');
       },
@@ -158,5 +210,19 @@ export class CasosEnProcesoComponent implements OnInit {
         this.cargarCasos();
       }
     });
+  }
+
+  filtrarCasos(): void {
+    const texto = this.filtro.trim().toLowerCase();
+
+    if(texto === ''){
+      this.casos = [...this.todosLosCasos];
+    } else {
+      this.casos = this.todosLosCasos.filter(caso => 
+        caso.numeroUsuario.toString().toLowerCase().includes(texto)
+      )
+    }
+
+    this.ordenarCasosPorFecha();
   }
 }

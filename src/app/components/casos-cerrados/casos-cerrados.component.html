@@ -5,7 +5,12 @@
     </div>
 
     <div class="search-bar">
-      <input type="text" class="lupa" placeholder="Buscar por celular">
+      <input 
+      type="text" 
+      class="lupa" 
+      placeholder="Buscar por celular"
+      [(ngModel)]="filtro"
+      (input)="filtrarCasos()">
     </div>
 
     <div class="casos-lista">
@@ -25,7 +30,7 @@
             <div class="chat-title">
               <span class="nombre">{{ caso.tipo.nombre }} - {{ caso.numeroUsuario }}</span>
             </div>
-            <span class="hora">{{ obtenerHora(caso.fecha) }}</span>
+            <span class="hora">{{ obtenerHora(caso) }}</span>
           </div>
           <div class="chat-status">
             <span class="estado-cerrado">Finalizado</span>
