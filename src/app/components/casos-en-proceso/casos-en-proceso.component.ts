@@ -24,6 +24,12 @@ export class CasosEnProcesoComponent implements OnInit {
   filtro: string = '';
   todosLosCasos: Caso[] = [];
 
+  // Modal para nuevo chat
+  mostrarModal: boolean = false;
+  numeroUsuario: string = '';
+  tipoSeleccionado: any = null;
+  tiposCaso: any[] = []; // Aquí cargarás los tipos desde tu endpoint
+
   constructor(
     private casosService: CasosService,
     private adminService: AdministradoresService,
@@ -218,11 +224,48 @@ export class CasosEnProcesoComponent implements OnInit {
     if(texto === ''){
       this.casos = [...this.todosLosCasos];
     } else {
-      this.casos = this.todosLosCasos.filter(caso => 
+      this.casos = this.todosLosCasos.filter(caso =>
         caso.numeroUsuario.toString().toLowerCase().includes(texto)
       )
     }
 
     this.ordenarCasosPorFecha();
+  }
+
+  abrirModalNuevoChat(): void {
+    this.mostrarModal = true;
+    // Aquí puedes cargar los tipos desde tu endpoint
+    // this.tuServicio.getTiposCaso().subscribe(tipos => {
+    //   this.tiposCaso = tipos;
+    // });
+  }
+
+  cerrarModal(): void {
+    this.mostrarModal = false;
+    this.numeroUsuario = '';
+    this.tipoSeleccionado = null;
+  }
+
+  empezarChat(): void {
+    if (!this.numeroUsuario.trim() || !this.tipoSeleccionado) {
+      alert('Por favor complete todos los campos');
+      return;
+    }
+
+    // Aquí llamarás a tu endpoint para crear el caso
+    // this.tuServicio.crearCaso(this.numeroUsuario, this.tipoSeleccionado).subscribe(
+    //   nuevoCaso => {
+    //     this.casos.unshift(nuevoCaso); // Agregar al inicio de la lista
+    //     this.abrirChat(nuevoCaso); // Abrir el chat del nuevo caso
+    //     this.cerrarModal();
+    //   },
+    //   error => {
+    //     console.error('Error al crear el caso:', error);
+    //     alert('Error al crear el caso');
+    //   }
+    // );
+
+    console.log('Crear caso con:', this.numeroUsuario, this.tipoSeleccionado);
+    this.cerrarModal();
   }
 }
