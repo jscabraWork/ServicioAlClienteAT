@@ -36,6 +36,6 @@ export class CasosService {
 
   // Crear nuevo caso para nueva conversacion
   crearNuevoCaso(usuarioWhatsapp: string, tipo: string) {
-    return this.http.post<any>(`${this.apiUrl}/casos/${usuarioWhatsapp}/${tipo}`, {});
+    return this.http.post<any>(`${this.apiUrl}/casos/crearCaso/${usuarioWhatsapp}/${tipo}`, {});
   }
 }

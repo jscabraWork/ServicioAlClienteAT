@@ -8,6 +8,7 @@ import { WebSocketService } from '../../services/websocket.service';
 import { forkJoin } from 'rxjs';
 import { MensajesService } from '../../services/mensajes.service';
 import { AdministradoresService } from '../../services/administradores.service';
+import { TiposService } from '../../services/tipos.service';
 
 @Component({
   selector: 'app-casos-asignados',
@@ -33,6 +34,7 @@ export class CasosEnProcesoComponent implements OnInit {
   constructor(
     private casosService: CasosService,
     private adminService: AdministradoresService,
+    private tiposService: TiposService,
     private cdr: ChangeDetectorRef,
     private wsService: WebSocketService,
     private ngZone: NgZone
@@ -209,6 +211,7 @@ export class CasosEnProcesoComponent implements OnInit {
     this.adminService.atenderCaso(casoId, '1001117847').subscribe({
       next: response => {
         alert('Caso atendido exitosamente');
+        this.cargarCasos();
       },
       error: error => {
         // Si hay error, volver a cargar los casos para reflejar el estado real
@@ -234,10 +237,14 @@ export class CasosEnProcesoComponent implements OnInit {
 
   abrirModalNuevoChat(): void {
     this.mostrarModal = true;
-    // Aquí puedes cargar los tipos desde tu endpoint
-    // this.tuServicio.getTiposCaso().subscribe(tipos => {
-    //   this.tiposCaso = tipos;
-    // });
+
+    this.tiposService.getTipos().subscribe({
+      next: response => {
+        this.tiposCaso = response.listaTipos || [];
+      }, error: error => {
+        console.error('Error al cargar los tipos de caso:', error);
+      }
+    });
   }
 
   cerrarModal(): void {
@@ -252,18 +259,19 @@ export class CasosEnProcesoComponent implements OnInit {
       return;
     }
 
-    // Aquí llamarás a tu endpoint para crear el caso
-    // this.tuServicio.crearCaso(this.numeroUsuario, this.tipoSeleccionado).subscribe(
-    //   nuevoCaso => {
-    //     this.casos.unshift(nuevoCaso); // Agregar al inicio de la lista
-    //     this.abrirChat(nuevoCaso); // Abrir el chat del nuevo caso
-    //     this.cerrarModal();
-    //   },
-    //   error => {
-    //     console.error('Error al crear el caso:', error);
-    //     alert('Error al crear el caso');
-    //   }
-    // );
+    alert(`Creando caso para el número ${this.numeroUsuario} con tipo ${this.tipoSeleccionado.nombre}`);
+
+    this.casosService.crearNuevoCaso(this.numeroUsuario, this.tipoSeleccionado.nombre).subscribe({
+      next: response => {
+        console.log(response.mensaje);
+        console.log('Caso creado:', response.caso);
+        this.cerrarModal();
+        this.abrirChat(response.caso);
+      }, error: error => {
+        console.error('Error al crear el caso:', error);
+        alert('Error al crear el caso');
+      }
+    });
 
     console.log('Crear caso con:', this.numeroUsuario, this.tipoSeleccionado);
     this.cerrarModal();
