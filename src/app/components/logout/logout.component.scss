@@ -1,0 +1,119 @@
+// Variables de colores
+$color-primary: #ed701c;
+$color-primary-light: #F9B84A;
+$color-white: #fff;
+$color-text: #333;
+$color-text-light: #666;
+
+// Mixins
+@mixin flex-center {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.logout-container {
+  min-height: 100vh;
+  @include flex-center;
+  background: linear-gradient(135deg, $color-primary-light 0%, $color-primary 100%);
+  padding: 20px;
+}
+
+.logout-content {
+  background: $color-white;
+  border-radius: 16px;
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);
+  padding: 60px 80px;
+  text-align: center;
+  max-width: 600px;
+  width: 100%;
+  animation: fadeIn 0.5s ease-out;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: scale(0.95);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+.logout-header {
+  margin-bottom: 24px;
+
+  h1 {
+    color: $color-primary;
+    font-size: 36px;
+    font-weight: 700;
+    margin: 0;
+  }
+}
+
+.logout-message {
+  margin-bottom: 40px;
+
+  p {
+    color: $color-text-light;
+    font-size: 18px;
+    margin: 0;
+  }
+}
+
+.btn-login {
+  width: 100%;
+  max-width: 320px;
+  padding: 14px 24px;
+  background-color: #0f2335;
+  color: $color-white;
+  border: none;
+  border-radius: 8px;
+  font-size: 16px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  box-shadow: 0 4px 15px rgba(#0f2335, 0.3);
+
+  &:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(#0f2335, 0.4);
+    background-color: darken(#0f2335, 5%);
+  }
+
+  &:active {
+    transform: translateY(0);
+  }
+}
+
+// Responsive
+@media (max-width: 768px) {
+  .logout-content {
+    padding: 40px 32px;
+  }
+
+  .logout-header {
+    h1 {
+      font-size: 28px;
+    }
+  }
+
+  .logout-message {
+    p {
+      font-size: 16px;
+    }
+  }
+}
+
+@media (max-width: 520px) {
+  .logout-content {
+    padding: 32px 24px;
+  }
+
+  .logout-header {
+    h1 {
+      font-size: 24px;
+    }
+  }
+}

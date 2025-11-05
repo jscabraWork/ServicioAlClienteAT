@@ -1,0 +1,57 @@
+<div class="login-container">
+  <div class="login-card">
+    <div class="login-header">
+      <img src="assets/logo.png" alt="Logo">
+      <h1>Iniciar Sesión</h1>
+      <p class="subtitle">Ingresa con tu usuario de asesor servicio al cliente</p>
+    </div>
+
+    <form (ngSubmit)="handleLogin()" class="login-form">
+      <div class="form-group">
+        <label for="username">Usuario</label>
+        <input
+          type="text"
+          id="username"
+          name="username"
+          class="form-control"
+          placeholder="Ingresa tu usuario"
+          [(ngModel)]="usuario.usuario"
+          required>
+      </div>
+
+      <div class="form-group">
+        <label for="password">Contraseña</label>
+        <div style="position: relative;">
+          <input
+            [type]="mostrarPassword ? 'text' : 'password'"
+            id="password"
+            name="password"
+            class="form-control"
+            placeholder="Ingresa tu contraseña"
+            [(ngModel)]="usuario.contrasena"
+            required>
+          <span
+            style="position: absolute; right: 12px; top: 50%; transform: translateY(-50%); cursor: pointer;"
+            (click)="togglePassword()">
+            <i class="fa" [ngClass]="mostrarPassword ? 'fa-eye-slash' : 'fa-eye'"></i>
+          </span>
+        </div>
+      </div>
+
+      @if (invalidLogin) {
+        <div class="error-message">
+          <span>{{errorMessage}}</span>
+        </div>
+      }
+
+      <button class="btn-login" type="submit">
+        Iniciar Sesión
+      </button>
+    </form>
+
+    <div class="login-footer">
+      <p>&copy; 2025 Servicio al Cliente. All Tickets.</p>
+    </div>
+  </div>
+</div>
+

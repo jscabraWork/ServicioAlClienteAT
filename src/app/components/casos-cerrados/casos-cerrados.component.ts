@@ -29,7 +29,9 @@ export class CasosCerradosComponent implements OnInit {
   }
 
   cargarCasosCerrados(): void {
-    this.casosService.getCasosCerrados("1001117847").subscribe({
+    const usuarioEntidad = JSON.parse(sessionStorage.getItem('usuarioEntidad') || '{}');
+    const idAdmin = usuarioEntidad?.numeroDocumento || '';
+    this.casosService.getCasosCerrados(idAdmin).subscribe({
       next: response => {
         if (response?.casosTerminados) {
           this.todosLosCasos = response.casosTerminados;

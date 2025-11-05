@@ -2,6 +2,7 @@ import { Injectable } from "@angular/core";
 import { Client } from "@stomp/stompjs";
 import SockJS from 'sockjs-client';
 import { Observable, Subject } from "rxjs";
+import { API_SAC } from "../app.constants";
 
 @Injectable({
     providedIn: 'root'
@@ -13,7 +14,7 @@ export class WebSocketService {
 
     constructor() {
         this.client = new Client({
-            webSocketFactory: () => new SockJS('http://localhost:8090/api/sac/ws'),
+            webSocketFactory: () => new SockJS(`${API_SAC}/ws`),
             reconnectDelay: 5000,
             debug: (str) => console.log(str),
             onConnect: () => {

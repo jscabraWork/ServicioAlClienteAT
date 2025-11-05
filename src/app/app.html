@@ -1,7 +1,7 @@
-<div class="promotores-layout">
-  <app-menu-admin></app-menu-admin>
+<div class="sac-layout">
+  <app-menu-admin *ngIf="autenticador.getAdmin()"></app-menu-admin>
 
-  <main class="main-content">
+  <main [ngClass]="{'main-content': autenticador.getAdmin(), 'full-screen': !autenticador.getAdmin()}">
     <router-outlet></router-outlet>
   </main>
 </div>

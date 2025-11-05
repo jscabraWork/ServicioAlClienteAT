@@ -1,4 +1,4 @@
-import { ChangeDetectorRef, Component, NgZone, OnInit } from '@angular/core';
+import { AfterViewInit, ChangeDetectorRef, Component, ElementRef, NgZone, OnInit, ViewChild } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { CasosService } from '../../services/casos.service';
@@ -6,9 +6,9 @@ import { Caso } from '../../models/caso.model';
 import { ChatComponent } from '../chat/chat.component';
 import { WebSocketService } from '../../services/websocket.service';
 import { forkJoin } from 'rxjs';
-import { MensajesService } from '../../services/mensajes.service';
 import { AdministradoresService } from '../../services/administradores.service';
 import { TiposService } from '../../services/tipos.service';
+import intlTelInput from 'intl-tel-input';
 
 @Component({
   selector: 'app-casos-asignados',
@@ -31,6 +31,9 @@ export class CasosEnProcesoComponent implements OnInit {
   tipoSeleccionado: any = null;
   tiposCaso: any[] = []; // Aquí cargarás los tipos desde tu endpoint
 
+  @ViewChild('phoneInput', { static: false }) phoneInput!: ElementRef;
+  iti: any;
+
   constructor(
     private casosService: CasosService,
     private adminService: AdministradoresService,
@@ -39,6 +42,16 @@ export class CasosEnProcesoComponent implements OnInit {
     private wsService: WebSocketService,
     private ngZone: NgZone
   ) {}
+
+  inicializarIntlTel(): void {
+    if (this.phoneInput && !this.iti) {
+      this.iti = intlTelInput(this.phoneInput.nativeElement, {
+        initialCountry: 'co',
+        separateDialCode: true,
+        utilsScript: 'node_modules/intl-tel-input/build/js/utils.js' // Asegúrate de que está en assets/js
+      } as any);
+    }
+  }
 
   ngOnInit(): void {
     this.cargarCasos();
@@ -84,10 +97,19 @@ export class CasosEnProcesoComponent implements OnInit {
     }
   }
 
+  onInputChange(): void {
+    // Actualiza el ngModel con el número completo en formato internacional
+    if (this.iti) {
+      this.numeroUsuario = this.iti.getNumber();
+    }
+  }
+
   cargarCasos(): void {
+    const usuarioEntidad = JSON.parse(sessionStorage.getItem('usuarioEntidad') || '{}');
+    const idAdmin = usuarioEntidad?.numeroDocumento || '';
     // Obtener casos estado 0 y 1
     forkJoin({
-      enProceso: this.casosService.getCasosEnProceso("1001117847"),
+      enProceso: this.casosService.getCasosEnProceso(idAdmin),
       abiertos: this.casosService.getCasosAbiertos()
     }).subscribe(({ enProceso, abiertos }) => {
       const nuevosCasos: any[] = [];
@@ -137,8 +159,10 @@ export class CasosEnProcesoComponent implements OnInit {
   }
 
   cerrarCaso(casoId: string): void {
+    const usuarioEntidad = JSON.parse(sessionStorage.getItem('usuarioEntidad') || '{}');
+    const idAdmin = usuarioEntidad?.numeroDocumento || '';
     if (confirm('¿Está seguro de cerrar este caso?')) {
-      this.casosService.cerrarCaso(casoId, "1001117847").subscribe({
+      this.casosService.cerrarCaso(casoId, idAdmin).subscribe({
         next: response => {
           if (this.casoSeleccionado?.id === casoId) {
             this.cerrarChat();
@@ -208,7 +232,9 @@ export class CasosEnProcesoComponent implements OnInit {
   }
 
   atenderCaso(casoId: string): void {
-    this.adminService.atenderCaso(casoId, '1001117847').subscribe({
+    const usuarioEntidad = JSON.parse(sessionStorage.getItem('usuarioEntidad') || '{}');
+    const idAdmin = usuarioEntidad?.numeroDocumento || '';
+    this.adminService.atenderCaso(casoId, idAdmin).subscribe({
       next: response => {
         alert('Caso atendido exitosamente');
         this.cargarCasos();
@@ -238,6 +264,15 @@ export class CasosEnProcesoComponent implements OnInit {
   abrirModalNuevoChat(): void {
     this.mostrarModal = true;
 
+    // Espera a que Angular renderice el input antes de inicializar el plugin
+    setTimeout(() => {
+      if(this.iti){
+        this.iti.destroy();
+      }
+
+      this.inicializarIntlTel();
+    }, 100);
+    
     this.tiposService.getTipos().subscribe({
       next: response => {
         this.tiposCaso = response.listaTipos || [];
@@ -251,9 +286,15 @@ export class CasosEnProcesoComponent implements OnInit {
     this.mostrarModal = false;
     this.numeroUsuario = '';
     this.tipoSeleccionado = null;
+    if(this.iti){
+      this.iti.destroy();
+      this.iti = null;
+    }
   }
 
   empezarChat(): void {
+    const numeroWpp = this.iti.getSelectedCountryData().dialCode + this.numeroUsuario
+    alert(numeroWpp);
     if (!this.numeroUsuario.trim() || !this.tipoSeleccionado) {
       alert('Por favor complete todos los campos');
       return;
@@ -261,7 +302,7 @@ export class CasosEnProcesoComponent implements OnInit {
 
     alert(`Creando caso para el número ${this.numeroUsuario} con tipo ${this.tipoSeleccionado.nombre}`);
 
-    this.casosService.crearNuevoCaso(this.numeroUsuario, this.tipoSeleccionado.nombre).subscribe({
+    this.casosService.crearNuevoCaso(numeroWpp, this.tipoSeleccionado.nombre).subscribe({
       next: response => {
         console.log(response.mensaje);
         console.log('Caso creado:', response.caso);

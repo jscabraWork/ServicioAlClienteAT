@@ -318,10 +318,11 @@
       padding: 10px 12px;
       border: 1px solid #d0d0d0;
       border-radius: 8px;
-      font-size: 14px;
+      font-size: 18px;
       font-family: v.$font-tertiary;
       color: #1a1a1a;
       transition: all 0.2s ease;
+      background-color: #fff;
 
       &:focus {
         outline: none;
@@ -334,6 +335,32 @@
       }
     }
 
+    // Ajustes específicos para intl-tel-input
+    ::ng-deep .iti {
+      width: 100%;
+    }
+
+    .iti input {
+      width: 100% !important;
+      height: 42px;
+      border-radius: 8px;
+      border: 1px solid #d0d0d0;
+      font-size: 14px;
+      padding-left: 52px !important; /* espacio para la bandera */
+      box-sizing: border-box;
+    }
+
+    .iti__flag-container {
+      position: absolute;
+      left: 12px; // mueve la bandera más cerca del borde
+      top: 50%;
+      transform: translateY(-50%);
+    }
+
+    .iti input.form-control {
+      padding-left: 48px !important; // evita que el texto se monte sobre la bandera
+    }
+
     select.form-control {
       cursor: pointer;
       appearance: none;
@@ -343,6 +370,7 @@
       background-size: 16px;
       padding-right: 40px;
     }
+
   }
 }
 

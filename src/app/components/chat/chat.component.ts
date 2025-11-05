@@ -357,6 +357,8 @@ export class ChatComponent implements OnInit, OnChanges, AfterViewChecked {
   }
 
   async enviarAudio(audioBlob: Blob): Promise<void> {
+    const usuarioEntidad = JSON.parse(sessionStorage.getItem('usuarioEntidad') || '{}');
+    const idAdmin = usuarioEntidad?.numeroDocumento || '';
     let audioFile = new File([audioBlob], `audio_${Date.now()}.mpeg`, { type: 'audio/mpeg' });
 
     console.log(`Audio grabado: ${(audioFile.size / 1024 / 1024).toFixed(2)}MB`);
@@ -368,7 +370,7 @@ export class ChatComponent implements OnInit, OnChanges, AfterViewChecked {
         audioFile = await this.comprimirAudio(audioFile);
       }
 
-      this.mensajesService.enviarMensajeConArchivo(this.caso.id, "1001117847", audioFile, 'audio').subscribe({
+      this.mensajesService.enviarMensajeConArchivo(this.caso.id, idAdmin, audioFile, 'audio').subscribe({
         next: (response: any) => {
           console.log('Audio enviado:', response);
           this.debeHacerScroll = true;
@@ -386,10 +388,12 @@ export class ChatComponent implements OnInit, OnChanges, AfterViewChecked {
 
   enviarMensaje(): void {
     // Si hay una imagen seleccionada, enviarla
+    const usuarioEntidad = JSON.parse(sessionStorage.getItem('usuarioEntidad') || '{}');
+    const idAdmin = usuarioEntidad?.numeroDocumento || '';
     if (this.archivoSeleccionado) {
       this.mensajesService.enviarMensajeConArchivo(
         this.caso.id,
-        "1001117847",
+        idAdmin,
         this.archivoSeleccionado,
         'image'
       ).subscribe({
@@ -406,7 +410,7 @@ export class ChatComponent implements OnInit, OnChanges, AfterViewChecked {
     }
     // Si hay texto, enviar mensaje de texto
     else if (this.nuevoMensaje.trim()) {
-      this.mensajesService.enviarMensaje(this.caso.id, "1001117847", this.nuevoMensaje).subscribe({
+      this.mensajesService.enviarMensaje(this.caso.id, idAdmin, this.nuevoMensaje).subscribe({
         next: response => {
           console.log(response.mensajeEnviado);
           this.nuevoMensaje = '';
