@@ -294,13 +294,10 @@ export class CasosEnProcesoComponent implements OnInit {
 
   empezarChat(): void {
     const numeroWpp = this.iti.getSelectedCountryData().dialCode + this.numeroUsuario
-    alert(numeroWpp);
     if (!this.numeroUsuario.trim() || !this.tipoSeleccionado) {
       alert('Por favor complete todos los campos');
       return;
     }
-
-    alert(`Creando caso para el número ${this.numeroUsuario} con tipo ${this.tipoSeleccionado.nombre}`);
 
     this.casosService.crearNuevoCaso(numeroWpp, this.tipoSeleccionado.nombre).subscribe({
       next: response => {

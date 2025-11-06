@@ -30,7 +30,7 @@ export class MenuAdminComponent implements OnInit {
   private updateNavItems() {
     const administrador = sessionStorage.getItem('administrador');
     this.navItems = [
-      //{ route: `/buscar`, icon: 'assets/lupa2.png', label: '' },
+      { route: `/crear-asesor`, icon: 'assets/agregarAsesor.png', label: 'Crear Asesor' },
       { route: `/casos-en-proceso/${administrador}`, icon: 'assets/casosProceso.png', label: 'Casos en proceso' },
       { route: `/casos-cerrados/${administrador}`, icon: 'assets/casosCerrados.png', label: 'Casos cerrados' },
       { route: '/logout', icon: 'assets/cerrar-sesion.png', label: 'Cerrar Sesión', isLogout: true }
