@@ -31,6 +31,8 @@ export class CasosEnProcesoComponent implements OnInit {
   tipoSeleccionado: any = null;
   tiposCaso: any[] = []; // Aquí cargarás los tipos desde tu endpoint
 
+  idAsesor: string = '';
+
   @ViewChild('phoneInput', { static: false }) phoneInput!: ElementRef;
   iti: any;
 
@@ -54,6 +56,8 @@ export class CasosEnProcesoComponent implements OnInit {
   }
 
   ngOnInit(): void {
+    const usuarioEntidad = JSON.parse(sessionStorage.getItem('usuarioEntidad') || '{}');
+    this.idAsesor = usuarioEntidad?.numeroDocumento || '';
     this.cargarCasos();
 
     // WebSocket para mostrar nuevos casos que aparecen
@@ -105,11 +109,9 @@ export class CasosEnProcesoComponent implements OnInit {
   }
 
   cargarCasos(): void {
-    const usuarioEntidad = JSON.parse(sessionStorage.getItem('usuarioEntidad') || '{}');
-    const idAdmin = usuarioEntidad?.numeroDocumento || '';
     // Obtener casos estado 0 y 1
     forkJoin({
-      enProceso: this.casosService.getCasosEnProceso(idAdmin),
+      enProceso: this.casosService.getCasosEnProceso(this.idAsesor),
       abiertos: this.casosService.getCasosAbiertos()
     }).subscribe(({ enProceso, abiertos }) => {
       const nuevosCasos: any[] = [];
@@ -159,10 +161,8 @@ export class CasosEnProcesoComponent implements OnInit {
   }
 
   cerrarCaso(casoId: string): void {
-    const usuarioEntidad = JSON.parse(sessionStorage.getItem('usuarioEntidad') || '{}');
-    const idAdmin = usuarioEntidad?.numeroDocumento || '';
     if (confirm('¿Está seguro de cerrar este caso?')) {
-      this.casosService.cerrarCaso(casoId, idAdmin).subscribe({
+      this.casosService.cerrarCaso(casoId, this.idAsesor).subscribe({
         next: response => {
           if (this.casoSeleccionado?.id === casoId) {
             this.cerrarChat();
@@ -232,9 +232,7 @@ export class CasosEnProcesoComponent implements OnInit {
   }
 
   atenderCaso(casoId: string): void {
-    const usuarioEntidad = JSON.parse(sessionStorage.getItem('usuarioEntidad') || '{}');
-    const idAdmin = usuarioEntidad?.numeroDocumento || '';
-    this.adminService.atenderCaso(casoId, idAdmin).subscribe({
+    this.adminService.atenderCaso(casoId, this.idAsesor).subscribe({
       next: response => {
         alert('Caso atendido exitosamente');
         this.cargarCasos();

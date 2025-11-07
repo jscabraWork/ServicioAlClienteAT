@@ -1,3 +1,5 @@
+@use '../../../styles/variables' as v;
+
 .crear-asesor-container {
   display: flex;
   min-height: 100vh;
@@ -48,7 +50,7 @@ form {
     font-weight: 500;
   }
 
-  input {
+  input, select {
     padding: 0.875rem 1rem;
     border: 1px solid #e0e0e0;
     border-radius: 4px;
@@ -147,7 +149,7 @@ form {
 }
 
 // Responsive design
-@media (max-width: 768px) {
+@media (max-width: v.$tablet-breakpoint) {
   .content {
     padding: 1rem;
   }

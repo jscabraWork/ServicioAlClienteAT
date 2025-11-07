@@ -79,16 +79,26 @@ export class AuthService {
 
 
     this._usuario.roles.forEach(r=>{
-      if(r=="ROLE_ADMIN"){
-        this._usuario!.tipo='admin'
+      // if(r=="ROLE_ADMIN"){
+      //   this._usuario!.tipo='admin'
+      // }
+      if(r != "ROLE_ASESOR") alert("Solo se permite ingreso a asesores")
+      if(r=="ROLE_ASESOR"){
+        this._usuario!.tipo='asesor'
       }
     })
 
-    if (this._usuario.tipo == 'admin') {
+    // if (this._usuario.tipo == 'admin') {
+    //   this.router.navigate(['casos-en-proceso', this._usuario.usuario]);
+
+    //   this.dialog.closeAll();
+    //   sessionStorage.setItem('administrador', this._usuario.usuario);
+    // }
+    if (this._usuario.tipo == 'asesor') {
       this.router.navigate(['casos-en-proceso', this._usuario.usuario]);
 
       this.dialog.closeAll();
-      sessionStorage.setItem('administrador', this._usuario.usuario);
+      sessionStorage.setItem('asesor', this._usuario.usuario);
     }
 
      sessionStorage.setItem('usuarioEntidad', JSON.stringify(this._usuario));
@@ -141,6 +151,7 @@ export class AuthService {
     sessionStorage.removeItem('promotor');
     sessionStorage.removeItem('organizador');
     sessionStorage.removeItem('administrador');
+    sessionStorage.removeItem('asesor');
     sessionStorage.removeItem('ministerio');
     sessionStorage.removeItem('puntoF');
     sessionStorage.removeItem('coordinador');

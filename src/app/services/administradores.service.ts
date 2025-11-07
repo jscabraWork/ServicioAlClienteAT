@@ -10,7 +10,11 @@ import { API_SAC } from '../app.constants';
 })export class AdministradoresService {
     private apiUrl = `${API_SAC}`; 
 
-    constructor(private http: HttpClient) {} 
+    constructor(private http: HttpClient) {}
+
+    crearAdminMongo(numeroDocumento: string, nombre: string) {
+      return this.http.post<any>(`${this.apiUrl}/administradores/crearAdmin/${numeroDocumento}/${nombre}`, null);
+    }
 
     // asignarCaso
     atenderCaso(casoId: string, adminId: string) {

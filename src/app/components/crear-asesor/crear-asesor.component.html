@@ -5,13 +5,13 @@
     <div class="form-container">
       <h1 class="title">Asesor</h1>
 
-      <form (ngSubmit)="onSubmit()">
+      <form (ngSubmit)="!todoForm.invalid && save()" #todoForm="ngForm">
         <div class="form-group">
           <label for="numeroDocumento">Número Documento</label>
           <input
             type="text"
             id="numeroDocumento"
-            [(ngModel)]="asesor.numeroDocumento"
+            [(ngModel)]="e.numeroDocumento"
             name="numeroDocumento"
             placeholder="Ingresar cédula.."
             required
@@ -23,7 +23,7 @@
           <input
             type="text"
             id="nombre"
-            [(ngModel)]="asesor.nombre"
+            [(ngModel)]="e.nombre"
             name="nombre"
             placeholder="Ingresar nombre completo.."
             required
@@ -32,14 +32,12 @@
 
         <div class="form-group">
           <label for="tipoDocumento">Tipo de Documento</label>
-          <input
-            type="text"
-            id="tipoDocumento"
-            [(ngModel)]="asesor.tipoDocumento"
-            name="tipoDocumento"
-            placeholder=""
-            required
-          />
+          <select type="text" name="tipo" required="required" [(ngModel)]="e.tipo_documento">
+            <option value="" disabled selected>Selecciona el tipo de documento...</option>
+            <option value="Cedula">Cedula</option>
+            <option value="TarjetaIdentidad">Tarjeta de identidad</option>
+            <option value="Pasaporte">Pasaporte</option>
+          </select>
         </div>
 
         <div class="form-group">
@@ -47,7 +45,7 @@
           <input
             type="text"
             id="celular"
-            [(ngModel)]="asesor.celular"
+            [(ngModel)]="e.celular"
             name="celular"
             placeholder="Ingresar Celular.."
             required
@@ -59,7 +57,7 @@
           <input
             type="text"
             id="usuario"
-            [(ngModel)]="asesor.usuario"
+            [(ngModel)]="e.correo"
             name="usuario"
             required
           />
@@ -69,26 +67,18 @@
           <label for="contrasena">Contraseña</label>
           <div class="password-container">
             <input
-              [type]="showPassword ? 'text' : 'password'"
+              [type]="mostrarPassword ? 'text' : 'password'"
               id="contrasena"
-              [(ngModel)]="asesor.contrasena"
+              [(ngModel)]="e.contrasena"
               name="contrasena"
               required
             />
-            <button
-              type="button"
-              class="toggle-password"
-              (click)="togglePasswordVisibility()"
-            >
-              <svg *ngIf="!showPassword" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
-                <circle cx="12" cy="12" r="3"></circle>
-              </svg>
-              <svg *ngIf="showPassword" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"></path>
-                <line x1="1" y1="1" x2="23" y2="23"></line>
-              </svg>
-            </button>
+            <span
+                class="toggle-password"
+                style="cursor: pointer; padding-top: 20px;"
+                (click)="togglePassword()">
+                <i [ngClass]="mostrarPassword ? 'fa fa-eye-slash' : 'fa fa-eye'"></i>
+            </span>
           </div>
         </div>
 

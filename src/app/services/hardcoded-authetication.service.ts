@@ -8,6 +8,10 @@ export class HardcodedAutheticationService {
     return sessionStorage.getItem('administrador');
   }
 
+  getAsesor(){
+    return sessionStorage.getItem('asesor');
+  }
+
   adminLoggin(){
     let usuario =sessionStorage.getItem('administrador');
     return !(usuario==null);

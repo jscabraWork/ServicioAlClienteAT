@@ -19,19 +19,21 @@ export class CasosCerradosComponent implements OnInit {
   filtro: string = '';
   todosLosCasos: Caso[] = [];
 
+  idAsesor: string = '';
+
   constructor(
     private casosService: CasosService,
     private cdr: ChangeDetectorRef
   ) {}
 
   ngOnInit(): void {
+    const usuarioEntidad = JSON.parse(sessionStorage.getItem('usuarioEntidad') || '{}');
+    this.idAsesor = usuarioEntidad?.numeroDocumento || '';
     this.cargarCasosCerrados();
   }
 
   cargarCasosCerrados(): void {
-    const usuarioEntidad = JSON.parse(sessionStorage.getItem('usuarioEntidad') || '{}');
-    const idAdmin = usuarioEntidad?.numeroDocumento || '';
-    this.casosService.getCasosCerrados(idAdmin).subscribe({
+    this.casosService.getCasosCerrados(this.idAsesor).subscribe({
       next: response => {
         if (response?.casosTerminados) {
           this.todosLosCasos = response.casosTerminados;

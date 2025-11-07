@@ -41,6 +41,9 @@ export class ChatComponent implements OnInit, OnChanges, AfterViewChecked {
   modalUrl: any = null;
   modalTipo: 'image' | 'video' | null = null;
 
+  nombreAsesor: string='';
+  idAsesor: string = '';
+
   constructor(
     private casosService: CasosService,
     private mensajesService: MensajesService,
@@ -49,6 +52,8 @@ export class ChatComponent implements OnInit, OnChanges, AfterViewChecked {
   ) {}
 
   ngOnInit(): void {
+    const usuarioEntidad = JSON.parse(sessionStorage.getItem('usuarioEntidad') || '{}');
+    this.idAsesor = usuarioEntidad?.numeroDocumento || '';
     this.cargarMensajes();
 
     // Solo suscribirse a WebSocket si NO está en modo solo lectura
@@ -357,8 +362,6 @@ export class ChatComponent implements OnInit, OnChanges, AfterViewChecked {
   }
 
   async enviarAudio(audioBlob: Blob): Promise<void> {
-    const usuarioEntidad = JSON.parse(sessionStorage.getItem('usuarioEntidad') || '{}');
-    const idAdmin = usuarioEntidad?.numeroDocumento || '';
     let audioFile = new File([audioBlob], `audio_${Date.now()}.mpeg`, { type: 'audio/mpeg' });
 
     console.log(`Audio grabado: ${(audioFile.size / 1024 / 1024).toFixed(2)}MB`);
@@ -370,7 +373,7 @@ export class ChatComponent implements OnInit, OnChanges, AfterViewChecked {
         audioFile = await this.comprimirAudio(audioFile);
       }
 
-      this.mensajesService.enviarMensajeConArchivo(this.caso.id, idAdmin, audioFile, 'audio').subscribe({
+      this.mensajesService.enviarMensajeConArchivo(this.caso.id, this.idAsesor, audioFile, 'audio').subscribe({
         next: (response: any) => {
           console.log('Audio enviado:', response);
           this.debeHacerScroll = true;
@@ -388,12 +391,10 @@ export class ChatComponent implements OnInit, OnChanges, AfterViewChecked {
 
   enviarMensaje(): void {
     // Si hay una imagen seleccionada, enviarla
-    const usuarioEntidad = JSON.parse(sessionStorage.getItem('usuarioEntidad') || '{}');
-    const idAdmin = usuarioEntidad?.numeroDocumento || '';
     if (this.archivoSeleccionado) {
       this.mensajesService.enviarMensajeConArchivo(
         this.caso.id,
-        idAdmin,
+        this.idAsesor,
         this.archivoSeleccionado,
         'image'
       ).subscribe({
@@ -410,7 +411,7 @@ export class ChatComponent implements OnInit, OnChanges, AfterViewChecked {
     }
     // Si hay texto, enviar mensaje de texto
     else if (this.nuevoMensaje.trim()) {
-      this.mensajesService.enviarMensaje(this.caso.id, idAdmin, this.nuevoMensaje).subscribe({
+      this.mensajesService.enviarMensaje(this.caso.id, this.idAsesor, this.nuevoMensaje).subscribe({
         next: response => {
           console.log(response.mensajeEnviado);
           this.nuevoMensaje = '';

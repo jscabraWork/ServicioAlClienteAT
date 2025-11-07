@@ -28,7 +28,7 @@ export class MenuAdminComponent implements OnInit {
   }
 
   private updateNavItems() {
-    const administrador = sessionStorage.getItem('administrador');
+    const administrador = sessionStorage.getItem('administrador')  || sessionStorage.getItem('asesor');
     this.navItems = [
       { route: `/crear-asesor`, icon: 'assets/agregarAsesor.png', label: 'Crear Asesor' },
       { route: `/casos-en-proceso/${administrador}`, icon: 'assets/casosProceso.png', label: 'Casos en proceso' },
