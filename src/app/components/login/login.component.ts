@@ -2,8 +2,6 @@ import { CommonModule } from '@angular/common';
 import { Component, OnInit } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
-import { AdministradoresService } from '../../services/administradores.service';
-import { Administrador } from '../../models/administrador.model';
 import { HardcodedAutheticationService } from '../../services/hardcoded-authetication.service';
 import { MatDialog } from '@angular/material/dialog';
 import { AuthService } from '../../services/seguridad/auth.service';

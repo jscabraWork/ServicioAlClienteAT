@@ -16,7 +16,14 @@ export class AuthService {
   private _token: string | null = '';
 
 
-  constructor(private http: HttpClient, private dialog: MatDialog, private router: Router) { }
+  constructor(private http: HttpClient, private dialog: MatDialog, private router: Router) {
+    // Cargar token y usuario desde sessionStorage al inicializar el servicio
+    this._token = sessionStorage.getItem('token');
+    const usuarioString = sessionStorage.getItem('usuario');
+    if (usuarioString) {
+      this._usuario = JSON.parse(usuarioString);
+    }
+  }
 
   public get usuario(): Usuario {
     if (this._usuario != null) {
