@@ -12,12 +12,8 @@ import { API_SAC } from '../app.constants';
 
     constructor(private http: HttpClient) {}
 
-    crearAdminMongo(numeroDocumento: string, nombre: string) {
-      return this.http.post<any>(`${this.apiUrl}/administradores/crearAdmin/${numeroDocumento}/${nombre}`, null);
-    }
-
     // asignarCaso
-    atenderCaso(casoId: string, adminId: string) {
-        return this.http.put<any>(`${this.apiUrl}/administradores/asignarAdminCaso/${casoId}/${adminId}`, {});
+    atenderCaso(casoId: string) {
+        return this.http.put<any>(`${this.apiUrl}/administradores/asignarAdminCaso/${casoId}`, {});
     }
 }

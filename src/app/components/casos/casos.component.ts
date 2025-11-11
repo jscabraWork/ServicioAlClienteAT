@@ -112,7 +112,7 @@ export class CasosComponent implements OnInit {
   private cargarCasosEnProceso(): void {
     // Obtener casos estado 0 y 1
     forkJoin({
-      enProceso: this.casosService.getCasosEnProceso(this.idAsesor),
+      enProceso: this.casosService.getCasosEnProceso(),
       abiertos: this.casosService.getCasosAbiertos()
     }).subscribe(({ enProceso, abiertos }) => {
       const nuevosCasos: any[] = [];
@@ -138,7 +138,7 @@ export class CasosComponent implements OnInit {
   }
 
   private cargarCasosCerrados(): void {
-    this.casosService.getCasosCerrados(this.idAsesor).subscribe({
+    this.casosService.getCasosCerrados().subscribe({
       next: response => {
         if (response?.casosTerminados) {
           this.todosLosCasos = response.casosTerminados;
@@ -183,7 +183,7 @@ export class CasosComponent implements OnInit {
 
   cerrarCaso(casoId: string): void {
     if (confirm('¿Está seguro de cerrar este caso?')) {
-      this.casosService.cerrarCaso(casoId, this.idAsesor).subscribe({
+      this.casosService.cerrarCaso(casoId).subscribe({
         next: response => {
           if (this.casoSeleccionado?.id === casoId) {
             this.cerrarChat();
@@ -253,7 +253,7 @@ export class CasosComponent implements OnInit {
   }
 
   atenderCaso(casoId: string): void {
-    this.adminService.atenderCaso(casoId, this.idAsesor).subscribe({
+    this.adminService.atenderCaso(casoId).subscribe({
       next: response => {
         alert('Caso atendido exitosamente');
         this.cargarCasos();

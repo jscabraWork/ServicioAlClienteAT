@@ -373,7 +373,7 @@ export class ChatComponent implements OnInit, OnChanges, AfterViewChecked {
         audioFile = await this.comprimirAudio(audioFile);
       }
 
-      this.mensajesService.enviarMensajeConArchivo(this.caso.id, this.idAsesor, audioFile, 'audio').subscribe({
+      this.mensajesService.enviarMensajeConArchivo(this.caso.id, audioFile, 'audio').subscribe({
         next: (response: any) => {
           console.log('Audio enviado:', response);
           this.debeHacerScroll = true;
@@ -394,7 +394,6 @@ export class ChatComponent implements OnInit, OnChanges, AfterViewChecked {
     if (this.archivoSeleccionado) {
       this.mensajesService.enviarMensajeConArchivo(
         this.caso.id,
-        this.idAsesor,
         this.archivoSeleccionado,
         'image'
       ).subscribe({
@@ -411,7 +410,7 @@ export class ChatComponent implements OnInit, OnChanges, AfterViewChecked {
     }
     // Si hay texto, enviar mensaje de texto
     else if (this.nuevoMensaje.trim()) {
-      this.mensajesService.enviarMensaje(this.caso.id, this.idAsesor, this.nuevoMensaje).subscribe({
+      this.mensajesService.enviarMensaje(this.caso.id, this.nuevoMensaje).subscribe({
         next: response => {
           console.log(response.mensajeEnviado);
           this.nuevoMensaje = '';

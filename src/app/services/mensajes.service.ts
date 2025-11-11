@@ -18,18 +18,18 @@ import { API_SAC } from '../app.constants';
     }
 
     // Enviar un mensaje
-    enviarMensaje(casoId: string, adminId: string, texto: string) {
+    enviarMensaje(casoId: string, texto: string) {
         const params = { mensaje: texto };
-        return this.http.post<any>(`${this.apiUrl}/mensajes/enviarMensaje/${casoId}/${adminId}`, null, { params });
+        return this.http.post<any>(`${this.apiUrl}/mensajes/enviarMensaje/${casoId}`, null, { params });
     }
 
     // Enviar mensaje con archivo (imagen, video, audio)
-    enviarMensajeConArchivo(casoId: string, adminId: string, archivo: File, tipoContenido: 'image' | 'audio') {
+    enviarMensajeConArchivo(casoId: string, archivo: File, tipoContenido: 'image' | 'audio') {
         const formData = new FormData();
         formData.append('file', archivo);
         formData.append('tipoContenido', tipoContenido);
 
-        return this.http.post<any>(`${this.apiUrl}/mensajes/enviarMensajeMultimedia/${casoId}/${adminId}`, formData);
+        return this.http.post<any>(`${this.apiUrl}/mensajes/enviarMensajeMultimedia/${casoId}`, formData);
     }
 
     // Obtener media completa

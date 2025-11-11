@@ -22,17 +22,17 @@ export class CasosService {
   }
 
   // Obtener casos asignados
-  getCasosEnProceso(adminId: string){
-    return this.http.get<any>(`${this.apiUrl}/casos/obtenerCasosEnProceso/${adminId}`);
+  getCasosEnProceso(){
+    return this.http.get<any>(`${this.apiUrl}/casos/obtenerCasosEnProceso`);
   }
 
-  getCasosCerrados(adminId: string) {
-    return this.http.get<any>(`${this.apiUrl}/casos/obtenerCasosCerrados/${adminId}`);
+  getCasosCerrados() {
+    return this.http.get<any>(`${this.apiUrl}/casos/obtenerCasosCerrados`);
   }
 
   // Cerrar un caso
-  cerrarCaso(casoId: string, adminId: string) {
-    return this.http.put<any>(`${this.apiUrl}/casos/cerrarCaso/${casoId}/${adminId}`, {});
+  cerrarCaso(casoId: string) {
+    return this.http.put<any>(`${this.apiUrl}/casos/cerrarCaso/${casoId}`, {});
   }
 
   // Crear nuevo caso para nueva conversacion
