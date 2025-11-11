@@ -1,23 +1,25 @@
-import { AfterViewInit, ChangeDetectorRef, Component, ElementRef, NgZone, OnInit, ViewChild } from '@angular/core';
+import { ChangeDetectorRef, Component, NgZone, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
+import { ActivatedRoute } from '@angular/router';
 import { CasosService } from '../../services/casos.service';
 import { Caso } from '../../models/caso.model';
 import { ChatComponent } from '../chat/chat.component';
+import { NuevaConversacionComponent } from '../nueva-conversacion/nueva-conversacion.component';
 import { WebSocketService } from '../../services/websocket.service';
 import { forkJoin } from 'rxjs';
 import { AdministradoresService } from '../../services/administradores.service';
-import { TiposService } from '../../services/tipos.service';
-import intlTelInput from 'intl-tel-input';
+
+type TipoVista = 'en-proceso' | 'cerrados';
 
 @Component({
-  selector: 'app-casos-asignados',
+  selector: 'app-casos',
   standalone: true,
-  imports: [CommonModule, FormsModule, ChatComponent],
-  templateUrl: './casos-en-proceso.component.html',
-  styleUrls: ['./casos-en-proceso.component.scss']
+  imports: [CommonModule, FormsModule, ChatComponent, NuevaConversacionComponent],
+  templateUrl: './casos.component.html',
+  styleUrls: ['./casos.component.scss']
 })
-export class CasosEnProcesoComponent implements OnInit {
+export class CasosComponent implements OnInit {
   casos: Caso[] = [];
   casoSeleccionado: Caso | null = null;
   ultimosMensajes: Map<string, string> = new Map();
@@ -25,65 +27,35 @@ export class CasosEnProcesoComponent implements OnInit {
   filtro: string = '';
   todosLosCasos: Caso[] = [];
 
-  // Modal para nuevo chat
+  // Modal para nuevo chat (solo en vista "en-proceso")
   mostrarModal: boolean = false;
-  numeroUsuario: string = '';
-  tipoSeleccionado: any = null;
-  tiposCaso: any[] = []; // Aquí cargarás los tipos desde tu endpoint
 
   idAsesor: string = '';
 
-  @ViewChild('phoneInput', { static: false }) phoneInput!: ElementRef;
-  iti: any;
+  // Propiedad que determina qué vista mostrar
+  tipoVista: TipoVista = 'en-proceso';
 
   constructor(
     private casosService: CasosService,
     private adminService: AdministradoresService,
-    private tiposService: TiposService,
     private cdr: ChangeDetectorRef,
     private wsService: WebSocketService,
-    private ngZone: NgZone
+    private ngZone: NgZone,
+    private route: ActivatedRoute
   ) {}
-
-  inicializarIntlTel(): void {
-    if (this.phoneInput && !this.iti) {
-      this.iti = intlTelInput(this.phoneInput.nativeElement, {
-        initialCountry: 'co',
-        separateDialCode: true,
-        utilsScript: 'node_modules/intl-tel-input/build/js/utils.js' // Asegúrate de que está en assets/js
-      } as any);
-    }
-  }
 
   ngOnInit(): void {
     const usuarioEntidad = JSON.parse(sessionStorage.getItem('usuarioEntidad') || '{}');
     this.idAsesor = usuarioEntidad?.numeroDocumento || '';
-    this.cargarCasos();
 
-    // WebSocket para mostrar nuevos casos que aparecen
-    this.wsService.obtenerNuevosCasos().subscribe(newCaso => {
-      console.log('Nuevo caso recibido:', newCaso);
-      // Solo agregar si no existe ya en la lista
-      const existe = this.casos.some(c => c.id === newCaso.id);
-      if (!existe) {
-        this.ngZone.run(() => {
-          this.todosLosCasos = [...this.casos, newCaso];
-          this.casos = [...this.todosLosCasos];
-          console.log('Casos actualizados:', this.casos);
+    // Detectar el tipo de vista desde la ruta
+    this.route.data.subscribe(data => {
+      this.tipoVista = data['tipo'] || 'en-proceso';
+      this.cargarCasos();
 
-          this.cdr.markForCheck();
-        })
-        
-      }
-    });
-
-    // WebSocket para casos atendidos (actualizar estado)
-    this.wsService.suscribirACasosAtendidos().subscribe(casoAtendido => {
-      console.log('Caso atendido:', casoAtendido);
-      const casoIndex = this.casos.findIndex(c => c.id === casoAtendido.id);
-      if (casoIndex !== -1) {
-        this.casos[casoIndex].estado = 1;
-        this.cdr.detectChanges();
+      // Solo inicializar WebSocket si estamos en vista "en-proceso"
+      if (this.tipoVista === 'en-proceso') {
+        this.inicializarWebSockets();
       }
     });
 
@@ -101,14 +73,43 @@ export class CasosEnProcesoComponent implements OnInit {
     }
   }
 
-  onInputChange(): void {
-    // Actualiza el ngModel con el número completo en formato internacional
-    if (this.iti) {
-      this.numeroUsuario = this.iti.getNumber();
-    }
+  private inicializarWebSockets(): void {
+    // WebSocket para mostrar nuevos casos que aparecen
+    this.wsService.obtenerNuevosCasos().subscribe(newCaso => {
+      console.log('Nuevo caso recibido:', newCaso);
+      // Solo agregar si no existe ya en la lista
+      const existe = this.casos.some(c => c.id === newCaso.id);
+      if (!existe) {
+        this.ngZone.run(() => {
+          this.todosLosCasos = [...this.casos, newCaso];
+          this.casos = [...this.todosLosCasos];
+          console.log('Casos actualizados:', this.casos);
+
+          this.cdr.markForCheck();
+        })
+      }
+    });
+
+    // WebSocket para casos atendidos (actualizar estado)
+    this.wsService.suscribirACasosAtendidos().subscribe(casoAtendido => {
+      console.log('Caso atendido:', casoAtendido);
+      const casoIndex = this.casos.findIndex(c => c.id === casoAtendido.id);
+      if (casoIndex !== -1) {
+        this.casos[casoIndex].estado = 1;
+        this.cdr.detectChanges();
+      }
+    });
   }
 
   cargarCasos(): void {
+    if (this.tipoVista === 'en-proceso') {
+      this.cargarCasosEnProceso();
+    } else {
+      this.cargarCasosCerrados();
+    }
+  }
+
+  private cargarCasosEnProceso(): void {
     // Obtener casos estado 0 y 1
     forkJoin({
       enProceso: this.casosService.getCasosEnProceso(this.idAsesor),
@@ -136,6 +137,24 @@ export class CasosEnProcesoComponent implements OnInit {
     });
   }
 
+  private cargarCasosCerrados(): void {
+    this.casosService.getCasosCerrados(this.idAsesor).subscribe({
+      next: response => {
+        if (response?.casosTerminados) {
+          this.todosLosCasos = response.casosTerminados;
+          this.casos = [...this.todosLosCasos];
+          this.ordenarCasosPorFecha();
+          console.log(response.mensaje);
+        } else {
+          console.log(response?.mensaje || 'Sin casos cerrados.');
+        }
+      },
+      error: error => {
+        console.error('Error al cargar casos cerrados:', error);
+      }
+    });
+  }
+
   private agregarCasos(nuevosCasos: any[]): void {
     this.todosLosCasos = [...this.casos, ...nuevosCasos];
     this.casos = [...this.todosLosCasos];
@@ -150,7 +169,9 @@ export class CasosEnProcesoComponent implements OnInit {
 
   abrirChat(caso: Caso): void {
     this.casoSeleccionado = caso;
-    if(this.casoSeleccionado.estado === 0) {
+
+    // Solo atender caso automáticamente si estamos en vista "en-proceso" y el estado es 0
+    if(this.tipoVista === 'en-proceso' && this.casoSeleccionado.estado === 0) {
       this.casoSeleccionado.estado = 1;
       this.atenderCaso(caso.id);
     }
@@ -261,55 +282,32 @@ export class CasosEnProcesoComponent implements OnInit {
 
   abrirModalNuevoChat(): void {
     this.mostrarModal = true;
-
-    // Espera a que Angular renderice el input antes de inicializar el plugin
-    setTimeout(() => {
-      if(this.iti){
-        this.iti.destroy();
-      }
-
-      this.inicializarIntlTel();
-    }, 100);
-    
-    this.tiposService.getTipos().subscribe({
-      next: response => {
-        this.tiposCaso = response.listaTipos || [];
-      }, error: error => {
-        console.error('Error al cargar los tipos de caso:', error);
-      }
-    });
   }
 
   cerrarModal(): void {
     this.mostrarModal = false;
-    this.numeroUsuario = '';
-    this.tipoSeleccionado = null;
-    if(this.iti){
-      this.iti.destroy();
-      this.iti = null;
-    }
   }
 
-  empezarChat(): void {
-    const numeroWpp = this.iti.getSelectedCountryData().dialCode + this.numeroUsuario
-    if (!this.numeroUsuario.trim() || !this.tipoSeleccionado) {
-      alert('Por favor complete todos los campos');
-      return;
-    }
+  onCasoCreado(caso: any): void {
+    this.abrirChat(caso);
+  }
 
-    this.casosService.crearNuevoCaso(numeroWpp, this.tipoSeleccionado.nombre).subscribe({
-      next: response => {
-        console.log(response.mensaje);
-        console.log('Caso creado:', response.caso);
-        this.cerrarModal();
-        this.abrirChat(response.caso);
-      }, error: error => {
-        console.error('Error al crear el caso:', error);
-        alert('Error al crear el caso');
-      }
-    });
+  // Getter para saber si estamos en modo solo lectura (casos cerrados)
+  get esModoSoloLectura(): boolean {
+    return this.tipoVista === 'cerrados';
+  }
 
-    console.log('Crear caso con:', this.numeroUsuario, this.tipoSeleccionado);
-    this.cerrarModal();
+  // Getter para el mensaje vacío
+  get mensajeVacio(): string {
+    return this.tipoVista === 'en-proceso'
+      ? 'No hay casos asignados'
+      : 'No hay casos cerrados';
+  }
+
+  // Getter para la imagen del avatar
+  get imagenAvatar(): string {
+    return this.tipoVista === 'en-proceso'
+      ? 'assets/loloDuda.png'
+      : 'assets/loloFin.png';
   }
 }

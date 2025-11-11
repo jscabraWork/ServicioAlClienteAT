@@ -1,0 +1,88 @@
+<div class="container-wrapper" [class.chat-abierto]="casoSeleccionado">
+  <div class="container">
+    <div class="header">
+      <h2>Todas las conversaciones</h2>
+      <!-- Botón + solo visible en vista "en-proceso" -->
+      <button
+        *ngIf="tipoVista === 'en-proceso'"
+        class="btn-new-chat"
+        (click)="abrirModalNuevoChat()">+</button>
+    </div>
+
+    <div class="search-bar">
+      <input
+        type="text"
+        class="lupa"
+        placeholder="Buscar por celular"
+        [(ngModel)]="filtro"
+        (input)="filtrarCasos()">
+    </div>
+
+    <div class="casos-lista">
+      <div *ngIf="casos.length === 0" class="empty-message">
+        {{ mensajeVacio }}
+      </div>
+
+      <div *ngFor="let caso of casos"
+           class="chat-item"
+           [class.chat-seleccionado]="casoSeleccionado?.id === caso.id"
+           (click)="abrirChat(caso)">
+        <div class="avatar">
+          <img [src]="imagenAvatar" alt="Avatar" class="avatar-placeholder">
+        </div>
+        <div class="chat-content">
+          <div class="chat-header">
+            <div class="chat-title">
+              <span class="nombre">{{ caso.tipo.nombre }} - {{ caso.numeroUsuario }}</span>
+            </div>
+            <span class="hora">{{ obtenerHora(caso) }}</span>
+          </div>
+
+          <!-- Vista en-proceso: mostrar último mensaje y selector de estado -->
+          <ng-container *ngIf="tipoVista === 'en-proceso'">
+            <div class="chat-preview">
+              <span class="ultimo-mensaje"> Ultimo mensaje: {{ obtenerUltimoMensaje(caso) }} </span>
+            </div>
+            <div class="chat-status">
+              <select class="estado-select"
+                      [(ngModel)]="caso.estado"
+                      (change)="cambiarEstado($event, caso)"
+                      (click)="$event.stopPropagation()">
+                <option [value]="0" disabled>Sin atender</option>
+                <option [value]="1">En proceso</option>
+                <option [value]="2">Finalizado</option>
+              </select>
+            </div>
+          </ng-container>
+
+          <!-- Vista cerrados: solo mostrar estado -->
+          <ng-container *ngIf="tipoVista === 'cerrados'">
+            <div class="chat-status">
+              <span class="estado-cerrado">Finalizado</span>
+            </div>
+          </ng-container>
+        </div>
+
+        <!-- Badge de notificación solo en vista "en-proceso" y estado 0 -->
+        <div
+          class="notification-badge"
+          *ngIf="tipoVista === 'en-proceso' && caso.estado === 0"></div>
+      </div>
+    </div>
+  </div>
+
+  <app-chat
+    *ngIf="casoSeleccionado"
+    [caso]="casoSeleccionado"
+    [modoSoloLectura]="esModoSoloLectura"
+    (cerrar)="cerrarChat()"
+    (nuevoMensajeRecibido)="actualizarUltimoMensaje($event)">
+  </app-chat>
+
+  <!-- Modal para nuevo chat (solo visible en vista "en-proceso") -->
+  <app-nueva-conversacion
+    *ngIf="mostrarModal"
+    (cerrar)="cerrarModal()"
+    (casoCreado)="onCasoCreado($event)">
+  </app-nueva-conversacion>
+</div>
