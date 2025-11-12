@@ -12,6 +12,10 @@ import { API_SAC } from '../app.constants';
 
     constructor(private http: HttpClient) {}
 
+    getUltimoMensajeChat(casoId: string) {
+        return this.http.get<any>(`${this.apiUrl}/mensajes/ultimoMensajeChat/${casoId}`);
+    }
+
     // Obtener mensajes de un caso
     getMensajesPorCaso(casoId: string) {
         return this.http.get<any>(`${this.apiUrl}/mensajes/mensajesChat/${casoId}`);

@@ -1,4 +1,7 @@
 /* You can add global styles to this file, and also import other style files */
+@use 'styles/variables' as v;
+@use 'styles/mixins' as m;
+@use 'styles/animations';
 
 * {
   margin: 0;
@@ -8,7 +11,7 @@
 
 body {
   font-family: Arial, sans-serif;
-  background: #f5f5f5;
+  background: v.$color-gris-muy-light;
 }
 
 html, body {

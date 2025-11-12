@@ -16,18 +16,8 @@ export class CasosService {
 
   constructor(private http: HttpClient) {}
 
-  // Obtener casos sin resolver
-  getCasosAbiertos(){
-    return this.http.get<any>(`${this.apiUrl}/casos/obtenerCasosAbiertos`);
-  }
-
-  // Obtener casos asignados
-  getCasosEnProceso(){
-    return this.http.get<any>(`${this.apiUrl}/casos/obtenerCasosEnProceso`);
-  }
-
-  getCasosCerrados() {
-    return this.http.get<any>(`${this.apiUrl}/casos/obtenerCasosCerrados`);
+  getCasosPorEstado(estado: number){
+    return this.http.get<any>(`${this.apiUrl}/casos/obtenerCasosPorEstado/${estado}`);
   }
 
   // Cerrar un caso

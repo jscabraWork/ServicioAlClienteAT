@@ -35,13 +35,13 @@
             <div class="chat-title">
               <span class="nombre">{{ caso.tipo.nombre }} - {{ caso.numeroUsuario }}</span>
             </div>
-            <span class="hora">{{ obtenerHora(caso) }}</span>
+            <span class="hora">{{ obtenerHora(caso.id) }}</span>
           </div>
 
           <!-- Vista en-proceso: mostrar último mensaje y selector de estado -->
           <ng-container *ngIf="tipoVista === 'en-proceso'">
             <div class="chat-preview">
-              <span class="ultimo-mensaje"> Ultimo mensaje: {{ obtenerUltimoMensaje(caso) }} </span>
+              <span class="ultimo-mensaje"> Ultimo mensaje: {{ obtenerUltimoMensaje(caso.id) }} </span>
             </div>
             <div class="chat-status">
               <select class="estado-select"

@@ -1,68 +1,22 @@
-// Variables de colores
-$color-primary: #ed701c;
-$color-primary-light: #F9B84A;
-$color-gray-dark: #333;
-$color-gray: #666;
-$color-white: #fff;
-$color-black: #000;
-$color-border: #e0e0e0;
-$color-error: #f44336;
-$color-error-bg: #fee;
-$color-error-dark: #c62828;
-$color-disabled: #f5f5f5;
-$color-placeholder: #999;
-
-// Espaciado
-$padding-base: 1rem;
-$border-width: 2px;
-$border-radius: 8px;
-$border-radius-card: 16px;
-
-// Breakpoints
-$breakpoint-tablet: 768px;
-$breakpoint-mobile: 520px;
-
-// Mixins
-@mixin gradient-primary {
-  background: linear-gradient(135deg, $color-primary-light 0%, $color-primary 100%);
-}
-
-@mixin gradient-gray {
-  background: linear-gradient($color-gray, $color-gray-dark);
-}
-
-@mixin flex-center {
-  display: flex;
-  justify-content: center;
-  align-items: center;
-}
+@use '../../../styles/variables' as v;
+@use '../../../styles/mixins' as m;
+@use '../../../styles/animations';
 
 // Contenedor principal
 .login-container {
   min-height: 100vh;
-  @include flex-center;
-  padding: 20px;
+  @include m.flex-center;
+  padding: v.$spacer-3;
 }
 
 .login-card {
-  background: $color-white;
-  border-radius: $border-radius-card;
-  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);
+  background: v.$color-blanco;
+  border-radius: v.$border-radius-xl;
+  box-shadow: v.$shadow-lg;
   width: 100%;
   max-width: 800px;
   padding: 40px;
   animation: slideIn 0.3s ease-out;
-}
-
-@keyframes slideIn {
-  from {
-    opacity: 0;
-    transform: translateY(-20px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
 }
 
 .login-header {
@@ -73,19 +27,19 @@ $breakpoint-mobile: 520px;
     width: 100px;
     height: 100px;
     object-fit: contain;
-    margin-bottom: 16px;
+    margin-bottom: v.$spacer-3;
   }
 
   h1 {
-    color: $color-primary;
+    color: v.$color-primario;
     font-size: 28px;
     font-weight: 700;
     margin: 0 0 8px 0;
   }
 
   .subtitle {
-    color: $color-gray;
-    font-size: 14px;
+    color: v.$color-texto-light;
+    font-size: v.$font-size-base;
     margin: 0;
   }
 
@@ -95,16 +49,16 @@ $breakpoint-mobile: 520px;
 }
 
 .login-form {
-  margin-bottom: 24px;
+  margin-bottom: v.$spacer-4;
 }
 
 .form-group {
-  margin-bottom: 24px;
+  margin-bottom: v.$spacer-4;
 
   label {
     display: block;
-    color: $color-gray-dark;
-    font-size: 14px;
+    color: v.$color-texto;
+    font-size: v.$font-size-base;
     font-weight: 600;
     margin-bottom: 8px;
   }
@@ -112,65 +66,59 @@ $breakpoint-mobile: 520px;
   .form-control {
     width: 100%;
     padding: 12px 16px;
-    border: $border-width solid $color-border;
-    border-radius: $border-radius;
+    border: 2px solid v.$color-gris-border;
+    border-radius: v.$border-radius-md;
     font-size: 15px;
-    transition: all 0.3s ease;
+    transition: all v.$transition-normal;
     box-sizing: border-box;
 
     &:focus {
       outline: none;
-      border-color: $color-primary;
-      box-shadow: 0 0 0 3px rgba($color-primary, 0.1);
+      border-color: v.$color-primario;
+      box-shadow: 0 0 0 3px rgba(v.$color-primario, 0.1);
     }
 
     &:disabled {
-      background-color: $color-disabled;
+      background-color: v.$color-disabled;
       cursor: not-allowed;
     }
 
     &::placeholder {
-      color: $color-placeholder;
+      color: v.$color-placeholder;
     }
   }
 }
 
 .error-message {
-  background-color: $color-error-bg;
-  border-left: 4px solid $color-error;
+  background-color: v.$color-error-bg;
+  border-left: 4px solid v.$color-error;
   padding: 12px 16px;
-  border-radius: 4px;
-  margin-bottom: 20px;
+  border-radius: v.$border-radius-sm;
+  margin-bottom: v.$spacer-3;
   animation: shake 0.3s ease-out;
 
   span {
-    color: $color-error-dark;
-    font-size: 14px;
+    color: v.$color-error-dark;
+    font-size: v.$font-size-base;
   }
-}
-
-@keyframes shake {
-  0%, 100% { transform: translateX(0); }
-  25% { transform: translateX(-5px); }
-  75% { transform: translateX(5px); }
 }
 
 .btn-login {
   width: 100%;
   padding: 14px 24px;
-  background-color: $color-primary;
-  color: $color-white;
+  background-color: v.$color-primario;
+  color: v.$color-blanco;
   border: none;
-  border-radius: $border-radius;
-  font-size: 16px;
+  border-radius: v.$border-radius-md;
+  font-size: v.$font-size-md;
   font-weight: 600;
   cursor: pointer;
-  transition: all 0.3s ease;
-  box-shadow: 0 4px 15px rgba($color-primary, 0.3);
+  transition: all v.$transition-normal;
+  box-shadow: 0 4px 15px rgba(v.$color-primario, 0.3);
 
   &:hover:not(:disabled) {
     transform: translateY(-2px);
-    box-shadow: 0 6px 20px rgba($color-primary, 0.4);
+    box-shadow: 0 6px 20px rgba(v.$color-primario, 0.4);
   }
 
   &:active:not(:disabled) {
@@ -185,56 +133,52 @@ $breakpoint-mobile: 520px;
 }
 
 .loading-spinner {
-  @include flex-center;
+  @include m.flex-center;
   gap: 8px;
 
   .spinner {
     width: 16px;
     height: 16px;
-    border: $border-width solid rgba($color-white, 0.3);
-    border-top-color: $color-white;
-    border-radius: 50%;
+    border: 2px solid rgba(v.$color-blanco, 0.3);
+    border-top-color: v.$color-blanco;
+    border-radius: v.$border-radius-circle;
     animation: spin 0.6s linear infinite;
   }
 }
 
-@keyframes spin {
-  to { transform: rotate(360deg); }
-}
-
 .login-footer {
   text-align: center;
-  padding-top: 24px;
-  border-top: 1px solid $color-border;
+  padding-top: v.$spacer-4;
+  border-top: 1px solid v.$color-gris-border;
 
   p {
-    color: $color-placeholder;
-    font-size: 12px;
+    color: v.$color-placeholder;
+    font-size: v.$font-size-xs;
     margin: 0;
   }
 }
 
 // Clases auxiliares adicionales
 .fa {
-  color: $color-gray;
+  color: v.$color-texto-light;
 }
 
 .ng-invalid:not(form) {
-  border-left: $border-width solid $color-black;
+  border-left: 2px solid v.$color-negro;
 }
 
 .ng-valid:not(form) {
-  border-left: $border-width solid $color-black;
+  border-left: 2px solid v.$color-negro;
 }
 
 .colorLetras {
-  color: $color-primary;
+  color: v.$color-primario;
 }
 
 // Responsive
-@media (max-width: $breakpoint-tablet) {
+@media (max-width: v.$mobile-breakpoint) {
   .login-container {
-    padding: 16px;
+    padding: v.$spacer-3;
   }
 
   .login-card {
@@ -244,7 +188,7 @@ $breakpoint-mobile: 520px;
 
   .login-header {
     h1 {
-      font-size: 24px;
+      font-size: v.$font-size-xxl;
     }
 
     .logo {
@@ -254,7 +198,7 @@ $breakpoint-mobile: 520px;
   }
 }
 
-@media (max-width: $breakpoint-mobile) {
+@media (max-width: 520px) {
   .login-card {
     max-width: 90%;
   }

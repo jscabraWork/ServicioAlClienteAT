@@ -1,19 +1,20 @@
 @use '../../../styles/variables' as v;
+@use '../../../styles/mixins' as m;
 
 .container-wrapper {
   width: 100%;
   display: flex;
   height: 94vh;
   max-height: 100vh;
-  background: #f5f5f5;
+  background: v.$color-gris-muy-light;
   overflow: hidden;
   position: relative;
 }
 
 .container {
   width: 30%;
-  background: white;
-  border-right: 1px solid #e0e0e0;
+  background: v.$color-blanco;
+  border-right: 1px solid v.$color-gris-border;
   display: flex;
   flex-direction: column;
   height: 100%;
@@ -23,13 +24,13 @@
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 20px;
-  border-bottom: 1px solid #e0e0e0;
+  padding: v.$spacer-3;
+  border-bottom: 1px solid v.$color-gris-border;
 
   h2 {
     margin: 0;
-    color: #1a1a1a;
-    font-size: 20px;
+    color: v.$color-texto-dark;
+    font-size: v.$font-size-xl;
     font-weight: 600;
   }
 }
@@ -41,31 +42,29 @@
   background: v.$color-secundario;
   color: v.$color-contraste;
   border: none;
-  font-size: 20px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
+  font-size: v.$font-size-xl;
+  @include m.flex-center;
   cursor: pointer;
-  transition: background 0.3s ease;
+  transition: background v.$transition-normal;
 
   &:hover {
-    background: #2d4f68;
+    background: v.$color-azul-medium;
   }
 }
 
 .search-bar {
   padding: 10px;
-  border-bottom: 1px solid #e0e0e0;
+  border-bottom: 1px solid v.$color-gris-border;
 
   input {
     width: 100%;
     padding: 8px 8px 8px 40px;
     border: 0;
     border-radius: 11px;
-    font-size: 14px;
+    font-size: v.$font-size-base;
     font-family: v.$font-tertiary;
-    color: #595959;
-    background: #eaeaea;
+    color: v.$color-texto-very-light;
+    background: v.$color-gris-background;
 
     &.lupa{
       background-image: url(../../../assets/lupa.png);
@@ -84,8 +83,8 @@
 .empty-message {
   padding: 40px 20px;
   text-align: center;
-  color: #999;
-  font-size: 14px;
+  color: v.$color-placeholder;
+  font-size: v.$font-size-base;
 }
 
 .chat-item {
@@ -94,16 +93,16 @@
   padding: 15px 20px;
   cursor: pointer;
   position: relative;
-  transition: background 0.2s ease;
-  border-bottom: 1px solid #f0f0f0;
+  transition: background v.$transition-fast;
+  border-bottom: 1px solid v.$color-background-light;
 
   &:hover {
-    background: #f8f8f8;
+    background: v.$color-gris-hover;
   }
 
   &.chat-seleccionado {
-    background: #e8f4f8;
-    border-left: 3px solid #ed701c;
+    background: v.$color-azul-info;
+    border-left: 3px solid v.$color-primario;
   }
 }
 
@@ -114,9 +113,9 @@
   .avatar-placeholder {
     width: 50px;
     height: 50px;
-    border-radius: 50%;
+    border-radius: v.$border-radius-circle;
     object-fit: cover;
-    background: #e0e0e0;
+    background: v.$color-gris-border;
   }
 }
 
@@ -139,14 +138,14 @@
   .nombre {
     font-size: 15px;
     font-weight: 600;
-    color: #1a1a1a;
+    color: v.$color-texto-dark;
     display: block;
   }
 }
 
 .hora {
-  font-size: 12px;
-  color: #666;
+  font-size: v.$font-size-xs;
+  color: v.$color-texto-light;
   flex-shrink: 0;
   margin-left: 8px;
 }
@@ -155,7 +154,7 @@
   margin-bottom: 4px;
 
   .ultimo-mensaje {
-    font-size: 14px;
+    font-size: v.$font-size-base;
     color: #ff6b35;
     display: block;
     white-space: nowrap;
@@ -177,9 +176,9 @@
   }
 
   .estado-select {
-    font-size: 13px;
-    color: black;
-    background-color: #8d99a0;
+    font-size: v.$font-size-sm;
+    color: v.$color-negro;
+    background-color: v.$color-gris-medium;
     appearance: none;
     -webkit-appearance: none;
     -moz-appearance: none;
@@ -189,9 +188,9 @@
     background-size: 14px;
     padding: 4px 8px 4px 28px;
     border: none;
-    border-radius: 4px;
+    border-radius: v.$border-radius-sm;
     cursor: pointer;
-    transition: all 0.2s ease;
+    transition: all v.$transition-fast;
     width: 80%;
 
     &:hover {
@@ -204,33 +203,33 @@
     }
 
     option {
-      background-color: #8d99a0;
-      color: #000;
+      background-color: v.$color-gris-medium;
+      color: v.$color-negro;
       padding: 8px;
 
       &:hover {
-        background-color: #fff;
-        color: #000;
+        background-color: v.$color-blanco;
+        color: v.$color-negro;
       }
 
       &:selected {
-        background-color: #ed701c;
-        color: white;
+        background-color: v.$color-primario;
+        color: v.$color-blanco;
       }
     }
 
     ::picker(.estado-select){
-      background-color: #8d99a0;
+      background-color: v.$color-gris-medium;
     }
 
   }
 
   .estado-cerrado {
-    font-size: 13px;
-    color: white;
-    background-color: #4caf50;
+    font-size: v.$font-size-sm;
+    color: v.$color-blanco;
+    background-color: v.$color-success;
     padding: 4px 12px;
-    border-radius: 4px;
+    border-radius: v.$border-radius-sm;
     display: inline-block;
   }
 }
@@ -242,7 +241,7 @@
   transform: translateY(-50%);
   width: 20px;
   height: 20px;
-  border-radius: 50%;
+  border-radius: v.$border-radius-circle;
   background: v.$color-primario;
 }
 

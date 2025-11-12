@@ -10,6 +10,6 @@ export interface Caso {
   estado: number;
   numeroUsuario: string;
   tipo: Tipo;
-  administrador: Administrador;
-  mensajes: Mensaje[];
+  adminAbre: Administrador;
+  adminCierra: Administrador;
 }

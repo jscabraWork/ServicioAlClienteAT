@@ -1,4 +1,4 @@
-import { Component, Input, Output, EventEmitter, OnInit, OnChanges, SimpleChanges, ChangeDetectorRef, ViewChild, ElementRef, AfterViewChecked } from '@angular/core';
+import { Component, Input, Output, EventEmitter, OnInit, OnChanges, SimpleChanges, ChangeDetectorRef, ViewChild, ElementRef, AfterViewChecked, NgZone } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { CasosService } from '../../services/casos.service';
@@ -48,7 +48,8 @@ export class ChatComponent implements OnInit, OnChanges, AfterViewChecked {
     private casosService: CasosService,
     private mensajesService: MensajesService,
     private wsService: WebSocketService,
-    private cdr: ChangeDetectorRef
+    private cdr: ChangeDetectorRef,
+    private ngZone: NgZone
   ) {}
 
   ngOnInit(): void {
@@ -61,10 +62,12 @@ export class ChatComponent implements OnInit, OnChanges, AfterViewChecked {
       this.wsService.suscribirACaso(this.caso.id).subscribe(
         (newMensaje) => {
           console.log('Nuevo mensaje recibido: ', newMensaje);
-          this.mensajes.push(newMensaje);
-          this.nuevoMensajeRecibido.emit(newMensaje);
-          this.debeHacerScroll = true;
-          this.cdr.detectChanges();
+          // Ejecutar dentro de NgZone para asegurar que los event listeners funcionen correctamente
+          this.ngZone.run(() => {
+            this.mensajes = [...this.mensajes, newMensaje];
+            this.nuevoMensajeRecibido.emit(newMensaje);
+            this.debeHacerScroll = true;
+          });
         }
       )
     }
@@ -85,17 +88,12 @@ export class ChatComponent implements OnInit, OnChanges, AfterViewChecked {
 
   private scrollAlFinal(): void {
     try {
-      // Usar setTimeout para asegurar que el DOM se ha actualizado completamente
-      setTimeout(() => {
+      // Usar requestAnimationFrame para mejor sincronización con el render
+      requestAnimationFrame(() => {
         const container = this.chatMensajesContainer.nativeElement;
+        // Usar scrollTop directo en lugar de scrollTo smooth para evitar interferencias con clicks
         container.scrollTop = container.scrollHeight;
-      }, 0);
-
-      // También agregar un segundo intento después de que las imágenes puedan haber cargado
-      setTimeout(() => {
-        const container = this.chatMensajesContainer.nativeElement;
-        container.scrollTop = container.scrollHeight;
-      }, 100);
+      });
 
       this.debeHacerScroll = false;
     } catch (err) {
@@ -106,8 +104,10 @@ export class ChatComponent implements OnInit, OnChanges, AfterViewChecked {
   onImagenCargada(): void {
     // Cuando una imagen termina de cargar, hacer scroll al final
     try {
-      const container = this.chatMensajesContainer.nativeElement;
-      container.scrollTop = container.scrollHeight;
+      requestAnimationFrame(() => {
+        const container = this.chatMensajesContainer.nativeElement;
+        container.scrollTop = container.scrollHeight;
+      });
     } catch (err) {
       console.error('Error al hacer scroll después de cargar imagen:', err);
     }
@@ -422,6 +422,10 @@ export class ChatComponent implements OnInit, OnChanges, AfterViewChecked {
 
   cerrarChat(): void {
     this.cerrar.emit();
+  }
+
+  trackByMensajeId(_index: number, mensaje: Mensaje): string {
+    return mensaje.id;
   }
 
   abrirModal(event: Event, url: any, tipo: 'image' | 'video'): void {

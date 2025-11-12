@@ -1,4 +1,6 @@
 @use '../../../styles/variables' as v;
+@use '../../../styles/mixins' as m;
+@use '../../../styles/animations';
 
 .chat-container {
   position: absolute;
@@ -6,43 +8,48 @@
   top: 0;
   height: 100%;
   width: 70%;
-  border-left: 1px solid #ddd;
+  border-left: 1px solid v.$color-gris;
   display: flex;
   flex-direction: column;
-  background: #fff;
+  background: v.$color-blanco;
   overflow: hidden;
 }
 
 .chat-header {
   padding: 15px;
-  border-bottom: 1px solid #ddd;
+  border-bottom: 1px solid v.$color-gris;
   display: flex;
   justify-content: space-between;
   align-items: center;
-  background: #f5f5f5;
+  background: v.$color-gris-muy-light;
 
   h3 {
     margin: 0;
-    font-size: 16px;
-    color: #333;
+    font-size: v.$font-size-md;
+    color: v.$color-texto;
   }
 }
 
 .chat-cliente {
-  font-size: 12px;
-  color: #666;
+  font-size: v.$font-size-xs;
+  color: v.$color-texto-light;
+}
+
+.chat-info-asesor {
+  font-size: v.$font-size-xs;
+  color: v.$color-primario;
 }
 
 .btn-cerrar-chat {
   background: none;
   border: none;
-  font-size: 20px;
+  font-size: v.$font-size-xl;
   cursor: pointer;
-  color: #666;
+  color: v.$color-texto-light;
   padding: 5px;
 
   &:hover {
-    color: #333;
+    color: v.$color-texto;
   }
 }
 
@@ -60,8 +67,8 @@
 .mensaje {
   max-width: 60%;
   padding: 10px;
-  border-radius: 5px;
-  background: #e0e0e0;
+  border-radius: v.$border-radius-sm;
+  background: v.$color-gris-border;
 }
 
 .mensaje-cliente {
@@ -76,7 +83,7 @@
   display: flex;
   justify-content: space-between;
   margin-bottom: 5px;
-  font-size: 12px;
+  font-size: v.$font-size-xs;
 }
 
 .mensaje-emisor {
@@ -85,11 +92,12 @@
 }
 
 .mensaje-fecha {
-  color: #333;
+  margin: 0 8px;
+  color: v.$color-texto;
 }
 
 .mensaje-texto {
-  color: #333;
+  color: v.$color-texto;
 }
 
 .imagen-miniatura, .video-miniatura {
@@ -98,16 +106,16 @@
   width: auto;
   height: auto;
   cursor: pointer;
-  border-radius: 8px;
+  border-radius: v.$border-radius-md;
   object-fit: cover;
-  transition: transform 0.2s, box-shadow 0.2s, opacity 0.2s;
+  transition: transform v.$transition-fast, box-shadow v.$transition-fast, opacity v.$transition-fast;
   display: block;
   user-select: none;
   -webkit-user-drag: none;
 
   &:hover {
     transform: scale(1.02);
-    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+    box-shadow: v.$shadow-md;
   }
 
   &:active {
@@ -117,7 +125,7 @@
 
 .video-miniatura {
   position: relative;
-  background: #000;
+  background: v.$color-negro;
 
   &::after {
     content: '▶';
@@ -126,16 +134,16 @@
     left: 50%;
     transform: translate(-50%, -50%);
     font-size: 48px;
-    color: rgba(255, 255, 255, 0.8);
+    color: rgba(v.$color-blanco, 0.8);
     pointer-events: none;
-    text-shadow: 0 2px 8px rgba(0, 0, 0, 0.6);
+    text-shadow: 0 2px 8px rgba(v.$color-negro, 0.6);
   }
 }
 
 
 .chat-input {
   padding: 15px;
-  border-top: 1px solid #ddd;
+  border-top: 1px solid v.$color-gris;
   display: flex;
   flex-direction: column;
   gap: 8px;
@@ -150,10 +158,10 @@
   .conversacion-cerrada {
     text-align: center;
     padding: 12px;
-    background: #f5f5f5;
-    border-radius: 8px;
-    color: #666;
-    font-size: 14px;
+    background: v.$color-gris-muy-light;
+    border-radius: v.$border-radius-md;
+    color: v.$color-texto-light;
+    font-size: v.$font-size-base;
     font-weight: 500;
   }
 
@@ -162,28 +170,28 @@
     align-items: center;
     gap: 10px;
     padding: 8px 12px;
-    background: #f5f5f5;
-    border-radius: 20px;
-    font-size: 13px;
+    background: v.$color-gris-muy-light;
+    border-radius: v.$border-radius-xxl;
+    font-size: v.$font-size-sm;
 
     span {
       flex: 1;
-      color: #555;
+      color: v.$color-texto-very-light;
     }
 
     button {
       padding: 2px 6px;
       background: transparent;
-      color: #666;
+      color: v.$color-texto-light;
       border: none;
-      border-radius: 50%;
+      border-radius: v.$border-radius-circle;
       cursor: pointer;
-      font-size: 16px;
-      transition: all 0.2s;
+      font-size: v.$font-size-md;
+      transition: all v.$transition-fast;
 
       &:hover {
-        background: #e0e0e0;
-        color: #333;
+        background: v.$color-gris-border;
+        color: v.$color-texto;
       }
     }
   }
@@ -194,8 +202,8 @@
     gap: 8px;
     padding: 8px 12px;
     background: #fff3e0;
-    border-radius: 20px;
-    font-size: 13px;
+    border-radius: v.$border-radius-xxl;
+    font-size: v.$font-size-sm;
     color: #e65100;
     font-weight: 500;
 
@@ -208,23 +216,21 @@
     display: flex;
     align-items: center;
     gap: 8px;
-    background: #f5f5f5;
-    border-radius: 24px;
+    background: v.$color-gris-muy-light;
+    border-radius: v.$border-radius-xxl;
     padding: 6px 6px 6px 12px;
     flex: 1;
 
     .btn-icon {
-      display: flex;
-      align-items: center;
-      justify-content: center;
+      @include m.flex-center;
       width: 36px;
       height: 36px;
       background: transparent;
       border: none;
-      border-radius: 50%;
+      border-radius: v.$border-radius-circle;
       cursor: pointer;
-      color: #666;
-      transition: all 0.2s;
+      color: v.$color-texto-light;
+      transition: all v.$transition-fast;
 
       svg {
         width: 20px;
@@ -232,8 +238,8 @@
       }
 
       &:hover:not(:disabled) {
-        background: #e0e0e0;
-        color: #333;
+        background: v.$color-gris-border;
+        color: v.$color-texto;
       }
 
       &:disabled {
@@ -242,7 +248,7 @@
       }
 
       &.grabando {
-        color: #f44336;
+        color: v.$color-error;
         animation: pulso-button 1.5s infinite;
       }
     }
@@ -252,11 +258,11 @@
       padding: 10px 12px;
       border: none;
       background: transparent;
-      font-size: 14px;
+      font-size: v.$font-size-base;
       outline: none;
 
       &::placeholder {
-        color: #999;
+        color: v.$color-placeholder;
       }
 
       &:disabled {
@@ -269,16 +275,14 @@
   .div-boton {
 
     .btn-enviar {
-      display: flex;
-      align-items: center;
-      justify-content: center;
+      @include m.flex-center;
       width: 101px;
       height: 32px;
       background: v.$color-secundario;
-      border-radius: 8px;
+      border-radius: v.$border-radius-md;
       color: v.$color-contraste;
-      transition: all 0.2s;
-      font-size: 14px;
+      transition: all v.$transition-fast;
+      font-size: v.$font-size-base;
       font-family: v.$font-tertiary, Arial;
       font-weight: bold;
 
@@ -288,19 +292,19 @@
       }
 
       &:hover:not(:disabled) {
-        background: #000102;
+        background: darken(v.$color-secundario, 10%);
         transform: scale(1.05);
       }
 
       &:disabled {
-        background: #ccc;
+        background: v.$color-gris;
         cursor: not-allowed;
         transform: scale(1);
       }
     }
   }
 
-  
+
 }
 
 @keyframes pulso {
@@ -328,7 +332,7 @@
   left: 0;
   width: 100%;
   height: 100%;
-  background: rgba(0, 0, 0, 0.9);
+  background: rgba(v.$color-negro, 0.9);
   display: flex;
   justify-content: center;
   align-items: center;
@@ -348,8 +352,8 @@
       max-height: 90vh;
       width: auto;
       height: auto;
-      border-radius: 8px;
-      box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5);
+      border-radius: v.$border-radius-md;
+      box-shadow: 0 8px 32px rgba(v.$color-negro, 0.5);
     }
 
     video {
@@ -361,33 +365,22 @@
     position: absolute;
     top: -40px;
     right: -40px;
-    background: rgba(255, 255, 255, 0.9);
+    background: rgba(v.$color-blanco, 0.9);
     border: none;
-    border-radius: 50%;
+    border-radius: v.$border-radius-circle;
     width: 40px;
     height: 40px;
-    font-size: 24px;
+    font-size: v.$font-size-xxl;
     cursor: pointer;
-    color: #333;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    transition: all 0.2s;
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+    color: v.$color-texto;
+    @include m.flex-center;
+    transition: all v.$transition-fast;
+    box-shadow: 0 2px 8px rgba(v.$color-negro, 0.3);
 
     &:hover {
-      background: white;
+      background: v.$color-blanco;
       transform: scale(1.1);
     }
-  }
-}
-
-@keyframes fadeIn {
-  from {
-    opacity: 0;
-  }
-  to {
-    opacity: 1;
   }
 }
 
@@ -415,7 +408,7 @@
     gap: 6px;
     position: sticky;
     bottom: 0;
-    background: #fff;
+    background: v.$color-blanco;
     z-index: 10;
 
     .input-row {
@@ -428,7 +421,7 @@
       padding: 4px 4px 4px 10px;
 
       input[type="text"] {
-        font-size: 16px; // Evita zoom automático en iOS
+        font-size: v.$font-size-md; // Evita zoom automático en iOS
         min-width: 0;
         padding: 8px 10px;
       }
@@ -459,7 +452,7 @@
       width: 100%;
       box-sizing: border-box;
       padding: 6px 10px;
-      font-size: 12px;
+      font-size: v.$font-size-xs;
     }
   }
 }

@@ -7,8 +7,10 @@ import { Caso } from '../../models/caso.model';
 import { ChatComponent } from '../chat/chat.component';
 import { NuevaConversacionComponent } from '../nueva-conversacion/nueva-conversacion.component';
 import { WebSocketService } from '../../services/websocket.service';
-import { forkJoin } from 'rxjs';
+import { catchError, firstValueFrom, forkJoin, of } from 'rxjs';
 import { AdministradoresService } from '../../services/administradores.service';
+import { Mensaje } from '../../models/mensaje.model';
+import { MensajesService } from '../../services/mensajes.service';
 
 type TipoVista = 'en-proceso' | 'cerrados';
 
@@ -22,7 +24,7 @@ type TipoVista = 'en-proceso' | 'cerrados';
 export class CasosComponent implements OnInit {
   casos: Caso[] = [];
   casoSeleccionado: Caso | null = null;
-  ultimosMensajes: Map<string, string> = new Map();
+  ultimosMensajes: Map<string, { texto: string; fecha: string }> = new Map();
 
   filtro: string = '';
   todosLosCasos: Caso[] = [];
@@ -35,9 +37,12 @@ export class CasosComponent implements OnInit {
   // Propiedad que determina qué vista mostrar
   tipoVista: TipoVista = 'en-proceso';
 
+  mensajes!: Mensaje[];
+
   constructor(
     private casosService: CasosService,
     private adminService: AdministradoresService,
+    private mensajesService: MensajesService,
     private cdr: ChangeDetectorRef,
     private wsService: WebSocketService,
     private ngZone: NgZone,
@@ -85,6 +90,9 @@ export class CasosComponent implements OnInit {
           this.casos = [...this.todosLosCasos];
           console.log('Casos actualizados:', this.casos);
 
+          // Cargar el último mensaje del nuevo caso
+          this.cargarUltimosMensajes([newCaso]);
+
           this.cdr.markForCheck();
         })
       }
@@ -112,20 +120,30 @@ export class CasosComponent implements OnInit {
   private cargarCasosEnProceso(): void {
     // Obtener casos estado 0 y 1
     forkJoin({
-      enProceso: this.casosService.getCasosEnProceso(),
-      abiertos: this.casosService.getCasosAbiertos()
+      enProceso: this.casosService.getCasosPorEstado(0).pipe(
+        catchError(error => {
+          console.warn('Error al obtener casos en proceso:', error);
+          return of({ listadoCasos: [], mensaje: 'Sin casos en proceso.' });
+        })
+      ),
+      abiertos: this.casosService.getCasosPorEstado(1).pipe(
+        catchError(error => {
+          console.warn('Error al obtener casos abiertos:', error);
+          return of({ listadoCasos: [], mensaje: 'Sin casos abiertos.' });
+        })
+      )
     }).subscribe(({ enProceso, abiertos }) => {
       const nuevosCasos: any[] = [];
 
-      if (enProceso?.casosEnProceso) {
-        nuevosCasos.push(...enProceso.casosEnProceso);
+      if (enProceso?.listadoCasos) {
+        nuevosCasos.push(...enProceso.listadoCasos);
         console.log(enProceso.mensaje);
       } else {
         console.log(enProceso?.mensaje || 'Sin casos en proceso.');
       }
 
-      if (abiertos?.casosAbiertos) {
-        nuevosCasos.push(...abiertos.casosAbiertos);
+      if (abiertos?.listadoCasos?.length) {
+        nuevosCasos.push(...abiertos.listadoCasos);
         console.log(abiertos.mensaje);
       } else {
         console.log(abiertos?.mensaje || 'Sin casos abiertos.');
@@ -134,17 +152,23 @@ export class CasosComponent implements OnInit {
       // Limpiar el array antes de agregar para evitar duplicados
       this.casos = [];
       this.agregarCasos(nuevosCasos);
+
+      // Cargar últimos mensajes para todos los casos
+      this.cargarUltimosMensajes(nuevosCasos);
     });
   }
 
   private cargarCasosCerrados(): void {
-    this.casosService.getCasosCerrados().subscribe({
+    this.casosService.getCasosPorEstado(2).subscribe({
       next: response => {
-        if (response?.casosTerminados) {
-          this.todosLosCasos = response.casosTerminados;
+        if (response?.listadoCasos) {
+          this.todosLosCasos = response.listadoCasos;
           this.casos = [...this.todosLosCasos];
           this.ordenarCasosPorFecha();
           console.log(response.mensaje);
+
+          // Cargar últimos mensajes para casos cerrados
+          this.cargarUltimosMensajes(this.casos);
         } else {
           console.log(response?.mensaje || 'Sin casos cerrados.');
         }
@@ -203,40 +227,78 @@ export class CasosComponent implements OnInit {
     }
   }
 
-  obtenerHora(caso: Caso): string {
-    // Obtener la fecha del último mensaje
-    const tieneMensajes = Array.isArray(caso.mensajes) && caso.mensajes.length > 0;
-    const fecha = tieneMensajes
-      ? caso.mensajes[caso.mensajes.length - 1].fecha
-      : caso.fecha;
+  private cargarUltimosMensajes(casos: Caso[]): void {
+    // Crear un array de observables para obtener los últimos mensajes de cada caso
+    const requests = casos.map(caso =>
+      this.mensajesService.getUltimoMensajeChat(caso.id).pipe(
+        catchError(error => {
+          console.warn(`Error al obtener último mensaje del caso ${caso.id}:`, error);
+          return of(null);
+        })
+      )
+    );
 
-    const date = new Date(fecha);
-    const day = date.getDate();
-    const months = ['Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun', 'Jul', 'Ago', 'Sep', 'Oct', 'Nov', 'Dic'];
-    const month = months[date.getMonth()];
-    const hours = date.getHours();
-    const minutes = date.getMinutes();
-    const ampm = hours >= 12 ? 'pm' : 'am';
-    const hours12 = hours % 12 || 12;
-    const minutesStr = minutes < 10 ? '0' + minutes : minutes;
-    return `${day}/${month} ${hours12}:${minutesStr}${ampm}`;
+    // Ejecutar todas las peticiones en paralelo
+    forkJoin(requests).subscribe(responses => {
+      responses.forEach((response, index) => {
+        if (response?.mensaje) {
+          const caso = casos[index];
+          const fecha = new Date(response.mensaje.fecha);
+
+          // Formatear la fecha
+          const day = fecha.getDate();
+          const months = ['Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun', 'Jul', 'Ago', 'Sep', 'Oct', 'Nov', 'Dic'];
+          const month = months[fecha.getMonth()];
+          const hours = fecha.getHours();
+          const minutes = fecha.getMinutes();
+          const ampm = hours >= 12 ? 'pm' : 'am';
+          const hours12 = hours % 12 || 12;
+          const minutesStr = minutes < 10 ? '0' + minutes : minutes;
+          const fechaFormateada = `${day}/${month} ${hours12}:${minutesStr}${ampm}`;
+
+          // Guardar en el Map
+          this.ultimosMensajes.set(caso.id, {
+            texto: response.mensaje.mensaje || '',
+            fecha: fechaFormateada
+          });
+        }
+      });
+
+      // Forzar detección de cambios
+      this.cdr.detectChanges();
+    });
   }
 
-  obtenerUltimoMensaje(caso: Caso): string {
-    if (!Array.isArray(caso.mensajes) || caso.mensajes.length === 0) {
-      return '(Sin mensajes)';
-    }
-    return caso.mensajes[caso.mensajes.length - 1].mensaje;
+  obtenerHora(casoId: string): string {
+    return this.ultimosMensajes.get(casoId)?.fecha || '';
+  }
+
+  obtenerUltimoMensaje(casoId: string): string {
+    return this.ultimosMensajes.get(casoId)?.texto || '';
   }
 
   actualizarUltimoMensaje(nuevoMensaje: any): void {
-    // Buscar el caso en la lista y actualizar su último mensaje
-    const casoIndex = this.casos.findIndex(c => c.id === this.casoSeleccionado?.id);
-    if (casoIndex !== -1) {
-      if (!Array.isArray(this.casos[casoIndex].mensajes)) {
-        this.casos[casoIndex].mensajes = [];
-      }
-      this.casos[casoIndex].mensajes.push(nuevoMensaje);
+    if (this.casoSeleccionado && nuevoMensaje) {
+      // Formatear la fecha del nuevo mensaje
+      const fecha = new Date(nuevoMensaje.fecha);
+      const day = fecha.getDate();
+      const months = ['Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun', 'Jul', 'Ago', 'Sep', 'Oct', 'Nov', 'Dic'];
+      const month = months[fecha.getMonth()];
+      const hours = fecha.getHours();
+      const minutes = fecha.getMinutes();
+      const ampm = hours >= 12 ? 'pm' : 'am';
+      const hours12 = hours % 12 || 12;
+      const minutesStr = minutes < 10 ? '0' + minutes : minutes;
+      const fechaFormateada = `${day}/${month} ${hours12}:${minutesStr}${ampm}`;
+
+      // Actualizar el Map con el nuevo mensaje
+      this.ultimosMensajes.set(this.casoSeleccionado.id, {
+        texto: nuevoMensaje.contenido || '',
+        fecha: fechaFormateada
+      });
+
+      // Forzar detección de cambios
+      this.cdr.detectChanges();
     }
   }
 

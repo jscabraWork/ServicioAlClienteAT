@@ -6,4 +6,5 @@ export interface Mensaje {
   casoId: string;
   tipoContenido: string;
   mediaId: string;
+  administradorNumeroDocumento: string;
 }
