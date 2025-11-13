@@ -44,6 +44,12 @@ export class ChatComponent implements OnInit, OnChanges, AfterViewChecked {
   nombreAsesor: string='';
   idAsesor: string = '';
 
+  paginaActual: number = 0;
+  tamanoPagina: number = 20
+  cargandoMasMensajes: boolean = false;
+  hayMasMensajes: boolean = true;
+  private scrollTimeout: any = null;
+
   constructor(
     private casosService: CasosService,
     private mensajesService: MensajesService,
@@ -55,7 +61,7 @@ export class ChatComponent implements OnInit, OnChanges, AfterViewChecked {
   ngOnInit(): void {
     const usuarioEntidad = JSON.parse(sessionStorage.getItem('usuarioEntidad') || '{}');
     this.idAsesor = usuarioEntidad?.numeroDocumento || '';
-    this.cargarMensajes();
+    this.cargarMensajes(true);
 
     // Solo suscribirse a WebSocket si NO está en modo solo lectura
     if (!this.modoSoloLectura) {
@@ -77,6 +83,32 @@ export class ChatComponent implements OnInit, OnChanges, AfterViewChecked {
     // Detectar cuando cambia el caso y recargar los mensajes
     if (changes['caso'] && !changes['caso'].firstChange) {
       this.cargarMensajes();
+    }
+  }
+
+  ngAfterViewInit(): void {
+    if (this.chatMensajesContainer) {
+      const container = this.chatMensajesContainer.nativeElement;
+
+      container.addEventListener('scroll', () => {
+        // Si ya está cargando, no hacer nada
+        if (this.cargandoMasMensajes) {
+          return;
+        }
+
+        // Limpiar timeout anterior si existe
+        if (this.scrollTimeout) {
+          clearTimeout(this.scrollTimeout);
+        }
+
+        // Esperar 150ms después del último evento de scroll antes de verificar
+        this.scrollTimeout = setTimeout(() => {
+          // Cargar cuando estés muy cerca del tope (dentro de los primeros 20px)
+          if(container.scrollTop <= 20 && this.hayMasMensajes && !this.cargandoMasMensajes) {
+            this.cargarMensajes(false);
+          }
+        }, 150);
+      })
     }
   }
 
@@ -123,13 +155,72 @@ export class ChatComponent implements OnInit, OnChanges, AfterViewChecked {
     return this.mensajesService.obtenerMediaCompleto(mensaje.mediaId);
   }
 
-  cargarMensajes(): void {
-    this.mensajesService.getMensajesPorCaso(this.caso.id).subscribe({
-      next: response => {
-        this.mensajes = response.mensajes;
-        this.debeHacerScroll = true;
-      }
-    });
+  cargarMensajes(inicial: boolean = true): void {
+    if(this.cargandoMasMensajes || !this.hayMasMensajes) return;
+
+    if (inicial) {
+      // Carga inicial: cargar inmediatamente sin animación prolongada
+      this.cargandoMasMensajes = true;
+
+      this.mensajesService.getMensajesPorCaso(this.caso.id, this.paginaActual, this.tamanoPagina).subscribe({
+        next: response => {
+          const mensajesNuevos = response.reverse();
+          this.mensajes = mensajesNuevos;
+          this.debeHacerScroll = true;
+          this.hayMasMensajes = mensajesNuevos.length === this.tamanoPagina;
+          this.paginaActual++;
+
+          setTimeout(() => {
+            this.cargandoMasMensajes = false;
+          }, 500);
+        },
+        error: error => {
+          this.cargandoMasMensajes = false;
+        }
+      });
+    } else {
+      // Carga de más mensajes: mostrar animación primero
+      this.cargandoMasMensajes = true;
+
+      this.mensajesService.getMensajesPorCaso(this.caso.id, this.paginaActual, this.tamanoPagina).subscribe({
+        next: response => {
+          const mensajesNuevos = response.reverse();
+
+          // Esperar 1 segundo mostrando la animación
+          setTimeout(() => {
+            // Ocultar animación
+            this.cargandoMasMensajes = false;
+
+            // Después de ocultar la animación, agregar los mensajes
+            setTimeout(() => {
+              const container = this.chatMensajesContainer.nativeElement;
+              const alturaAntes = container.scrollHeight;
+
+              // Agregar nuevos mensajes al inicio
+              this.mensajes = [...mensajesNuevos, ...this.mensajes];
+
+              // Actualizar variables de paginación
+              this.hayMasMensajes = mensajesNuevos.length === this.tamanoPagina;
+              this.paginaActual++;
+
+              // Forzar detección de cambios
+              this.cdr.detectChanges();
+
+              // Ajustar scroll para mantener posición
+              setTimeout(() => {
+                const alturaDespues = container.scrollHeight;
+                container.scrollTop = alturaDespues - alturaAntes;
+              }, 50);
+            }, 100);
+          }, 1000);
+        },
+        error: error => {
+          setTimeout(() => {
+            this.cargandoMasMensajes = false;
+          }, 1000);
+        }
+      });
+    }
   }
 
   // Comprimir imagen

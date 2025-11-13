@@ -12,6 +12,12 @@
   </div>
 
   <div class="chat-mensajes" #chatMensajes>
+    <!-- Indicador de carga en la parte superior -->
+    <div class="loading-indicator" *ngIf="cargandoMasMensajes">
+      <div class="spinner"></div>
+      <span>Cargando mensajes...</span>
+    </div>
+
     <div *ngFor="let mensaje of mensajes; trackBy: trackByMensajeId"
          class="mensaje"
          [class.mensaje-cliente]="mensaje.esRespuesta === false"

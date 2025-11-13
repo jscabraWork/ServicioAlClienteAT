@@ -75,6 +75,26 @@ export class CasosComponent implements OnInit {
           this.abrirChat(caso);
         }
       }, 500);
+    } else {
+      // Verificar si hay un chat abierto guardado en sessionStorage
+      this.restaurarChatAbierto();
+    }
+  }
+
+  private restaurarChatAbierto(): void {
+    const casoGuardadoId = sessionStorage.getItem(`chatAbierto_${this.tipoVista}`);
+
+    if (casoGuardadoId) {
+      // Esperar a que se carguen los casos y luego abrir el chat
+      setTimeout(() => {
+        const caso = this.casos.find(c => c.id === casoGuardadoId);
+        if (caso) {
+          this.casoSeleccionado = caso;
+        } else {
+          // Si el caso no existe, limpiar el sessionStorage
+          sessionStorage.removeItem(`chatAbierto_${this.tipoVista}`);
+        }
+      }, 500);
     }
   }
 
@@ -194,6 +214,9 @@ export class CasosComponent implements OnInit {
   abrirChat(caso: Caso): void {
     this.casoSeleccionado = caso;
 
+    // Guardar el caso abierto en sessionStorage
+    sessionStorage.setItem(`chatAbierto_${this.tipoVista}`, caso.id);
+
     // Solo atender caso automáticamente si estamos en vista "en-proceso" y el estado es 0
     if(this.tipoVista === 'en-proceso' && this.casoSeleccionado.estado === 0) {
       this.casoSeleccionado.estado = 1;
@@ -203,6 +226,9 @@ export class CasosComponent implements OnInit {
 
   cerrarChat(): void {
     this.casoSeleccionado = null;
+
+    // Limpiar el chat abierto del sessionStorage
+    sessionStorage.removeItem(`chatAbierto_${this.tipoVista}`);
   }
 
   cerrarCaso(casoId: string): void {
@@ -293,7 +319,7 @@ export class CasosComponent implements OnInit {
 
       // Actualizar el Map con el nuevo mensaje
       this.ultimosMensajes.set(this.casoSeleccionado.id, {
-        texto: nuevoMensaje.contenido || '',
+        texto: nuevoMensaje.mensaje || '',
         fecha: fechaFormateada
       });
 

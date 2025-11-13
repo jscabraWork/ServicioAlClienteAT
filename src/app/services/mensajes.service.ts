@@ -17,8 +17,8 @@ import { API_SAC } from '../app.constants';
     }
 
     // Obtener mensajes de un caso
-    getMensajesPorCaso(casoId: string) {
-        return this.http.get<any>(`${this.apiUrl}/mensajes/mensajesChat/${casoId}`);
+    getMensajesPorCaso(casoId: string, page: number = 0, size: number = 20) {
+        return this.http.get<Mensaje[]>(`${this.apiUrl}/mensajes/mensajesChat/${casoId}?page=${page}&size=${size}`);
     }
 
     // Enviar un mensaje
