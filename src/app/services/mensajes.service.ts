@@ -33,7 +33,7 @@ import { API_SAC } from '../app.constants';
         formData.append('file', archivo);
         formData.append('tipoContenido', tipoContenido);
 
-        return this.http.post<any>(`${this.apiUrl}/mensajes/enviarMensajeMultimedia/${casoId}`, formData);
+        return this.http.post<any>(`${this.apiUrl}/mensajes/enviarMensaje/${casoId}`, formData);
     }
 
     // Obtener media completa
