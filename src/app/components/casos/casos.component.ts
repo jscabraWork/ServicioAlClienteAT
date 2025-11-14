@@ -1,4 +1,4 @@
-import { ChangeDetectorRef, Component, NgZone, OnInit } from '@angular/core';
+import { ChangeDetectorRef, Component, NgZone, OnInit, ViewChild, ElementRef, AfterViewInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute } from '@angular/router';
@@ -11,6 +11,8 @@ import { catchError, firstValueFrom, forkJoin, of } from 'rxjs';
 import { AdministradoresService } from '../../services/administradores.service';
 import { Mensaje } from '../../models/mensaje.model';
 import { MensajesService } from '../../services/mensajes.service';
+import { TiposService } from '../../services/tipos.service';
+import { Tipo } from '../../models/tipo.model';
 
 type TipoVista = 'en-proceso' | 'cerrados';
 
@@ -21,7 +23,9 @@ type TipoVista = 'en-proceso' | 'cerrados';
   templateUrl: './casos.component.html',
   styleUrls: ['./casos.component.scss']
 })
-export class CasosComponent implements OnInit {
+export class CasosComponent implements OnInit, AfterViewInit {
+  @ViewChild('casosLista') casosListaContainer!: ElementRef;
+
   casos: Caso[] = [];
   casoSeleccionado: Caso | null = null;
   ultimosMensajes: Map<string, { texto: string; fecha: string }> = new Map();
@@ -39,10 +43,21 @@ export class CasosComponent implements OnInit {
 
   mensajes!: Mensaje[];
 
+  // Variables para paginación
+  paginaActual: number = 0;
+  tamanoPagina: number = 10;
+  cargandoMasCasos: boolean = false;
+  hayMasCasos: boolean = true;
+  private scrollTimeout: any = null;
+
+  // Cache de tipos para evitar peticiones repetidas
+  tiposCache: Map<string, Tipo> = new Map();
+
   constructor(
     private casosService: CasosService,
     private adminService: AdministradoresService,
     private mensajesService: MensajesService,
+    private tiposService: TiposService,
     private cdr: ChangeDetectorRef,
     private wsService: WebSocketService,
     private ngZone: NgZone,
@@ -56,6 +71,7 @@ export class CasosComponent implements OnInit {
     // Detectar el tipo de vista desde la ruta
     this.route.data.subscribe(data => {
       this.tipoVista = data['tipo'] || 'en-proceso';
+      this.resetearPaginacion();
       this.cargarCasos();
 
       // Solo inicializar WebSocket si estamos en vista "en-proceso"
@@ -79,6 +95,44 @@ export class CasosComponent implements OnInit {
       // Verificar si hay un chat abierto guardado en sessionStorage
       this.restaurarChatAbierto();
     }
+  }
+
+  ngAfterViewInit(): void {
+    if (this.casosListaContainer) {
+      const container = this.casosListaContainer.nativeElement;
+
+      container.addEventListener('scroll', () => {
+        // Si ya está cargando, no hacer nada
+        if (this.cargandoMasCasos) {
+          return;
+        }
+
+        // Limpiar timeout anterior si existe
+        if (this.scrollTimeout) {
+          clearTimeout(this.scrollTimeout);
+        }
+
+        // Esperar 150ms después del último evento de scroll antes de verificar
+        this.scrollTimeout = setTimeout(() => {
+          // Verificar si está cerca del final (dentro de los últimos 100px)
+          const scrollTop = container.scrollTop;
+          const scrollHeight = container.scrollHeight;
+          const clientHeight = container.clientHeight;
+
+          if (scrollHeight - (scrollTop + clientHeight) <= 100 && this.hayMasCasos && !this.cargandoMasCasos) {
+            this.cargarCasos();
+          }
+        }, 150);
+      });
+    }
+  }
+
+  private resetearPaginacion(): void {
+    this.paginaActual = 0;
+    this.hayMasCasos = true;
+    this.cargandoMasCasos = false;
+    this.casos = [];
+    this.todosLosCasos = [];
   }
 
   private restaurarChatAbierto(): void {
@@ -113,6 +167,9 @@ export class CasosComponent implements OnInit {
           // Cargar el último mensaje del nuevo caso
           this.cargarUltimosMensajes([newCaso]);
 
+          // Cargar tipo del nuevo caso
+          this.cargarTiposDeCasos([newCaso]);
+
           this.cdr.markForCheck();
         })
       }
@@ -130,6 +187,8 @@ export class CasosComponent implements OnInit {
   }
 
   cargarCasos(): void {
+    if (this.cargandoMasCasos || !this.hayMasCasos) return;
+
     if (this.tipoVista === 'en-proceso') {
       this.cargarCasosEnProceso();
     } else {
@@ -138,15 +197,17 @@ export class CasosComponent implements OnInit {
   }
 
   private cargarCasosEnProceso(): void {
-    // Obtener casos estado 0 y 1
+    this.cargandoMasCasos = true;
+
+    // Obtener casos estado 0 y 1 con paginación
     forkJoin({
-      enProceso: this.casosService.getCasosPorEstado(0).pipe(
+      enProceso: this.casosService.getCasosPorEstado(0, this.paginaActual, this.tamanoPagina).pipe(
         catchError(error => {
           console.warn('Error al obtener casos en proceso:', error);
           return of({ listadoCasos: [], mensaje: 'Sin casos en proceso.' });
         })
       ),
-      abiertos: this.casosService.getCasosPorEstado(1).pipe(
+      abiertos: this.casosService.getCasosPorEstado(1, this.paginaActual, this.tamanoPagina).pipe(
         catchError(error => {
           console.warn('Error al obtener casos abiertos:', error);
           return of({ listadoCasos: [], mensaje: 'Sin casos abiertos.' });
@@ -169,32 +230,69 @@ export class CasosComponent implements OnInit {
         console.log(abiertos?.mensaje || 'Sin casos abiertos.');
       }
 
-      // Limpiar el array antes de agregar para evitar duplicados
-      this.casos = [];
+      // Verificar si hay más casos para cargar
+      this.hayMasCasos = nuevosCasos.length === this.tamanoPagina;
+
+      // Agregar casos sin duplicados
       this.agregarCasos(nuevosCasos);
 
-      // Cargar últimos mensajes para todos los casos
+      // Incrementar página para la próxima carga
+      this.paginaActual++;
+
+      // Cargar últimos mensajes para los nuevos casos
       this.cargarUltimosMensajes(nuevosCasos);
+
+      // Cargar tipos de los nuevos casos
+      this.cargarTiposDeCasos(nuevosCasos);
+
+      // Esperar un poco antes de permitir nueva carga
+      setTimeout(() => {
+        this.cargandoMasCasos = false;
+        this.cdr.detectChanges();
+      }, 500);
     });
   }
 
   private cargarCasosCerrados(): void {
-    this.casosService.getCasosPorEstado(2).subscribe({
+    this.cargandoMasCasos = true;
+
+    this.casosService.getCasosPorEstado(2, this.paginaActual, this.tamanoPagina).subscribe({
       next: response => {
         if (response?.listadoCasos) {
-          this.todosLosCasos = response.listadoCasos;
-          this.casos = [...this.todosLosCasos];
-          this.ordenarCasosPorFecha();
+          const nuevosCasos = response.listadoCasos;
+
+          // Verificar si hay más casos para cargar
+          this.hayMasCasos = nuevosCasos.length === this.tamanoPagina;
+
+          // Agregar casos sin duplicados
+          this.agregarCasos(nuevosCasos);
+
+          // Incrementar página para la próxima carga
+          this.paginaActual++;
+
           console.log(response.mensaje);
 
-          // Cargar últimos mensajes para casos cerrados
-          this.cargarUltimosMensajes(this.casos);
+          // Cargar últimos mensajes para los nuevos casos
+          this.cargarUltimosMensajes(nuevosCasos);
+
+          // Cargar tipos de los nuevos casos
+          this.cargarTiposDeCasos(nuevosCasos);
         } else {
           console.log(response?.mensaje || 'Sin casos cerrados.');
+          this.hayMasCasos = false;
         }
+
+        // Esperar un poco antes de permitir nueva carga
+        setTimeout(() => {
+          this.cargandoMasCasos = false;
+          this.cdr.detectChanges();
+        }, 500);
       },
       error: error => {
         console.error('Error al cargar casos cerrados:', error);
+        this.cargandoMasCasos = false;
+        this.hayMasCasos = false;
+        this.cdr.detectChanges();
       }
     });
   }
@@ -212,16 +310,62 @@ export class CasosComponent implements OnInit {
   }
 
   abrirChat(caso: Caso): void {
-    this.casoSeleccionado = caso;
-
-    // Guardar el caso abierto en sessionStorage
-    sessionStorage.setItem(`chatAbierto_${this.tipoVista}`, caso.id);
-
     // Solo atender caso automáticamente si estamos en vista "en-proceso" y el estado es 0
-    if(this.tipoVista === 'en-proceso' && this.casoSeleccionado.estado === 0) {
-      this.casoSeleccionado.estado = 1;
-      this.atenderCaso(caso.id);
+    if(this.tipoVista === 'en-proceso' && caso.estado === 0) {
+      // Primero atender el caso y luego abrir el chat
+      caso.estado = 1;
+      this.atenderCaso(caso.id, () => {
+        // Esperar 1 segundo y luego recargar el caso actualizado
+        setTimeout(() => {
+          this.recargarCasoActualizado(caso.id);
+        }, 1000);
+      });
+    } else {
+      // Si el caso ya está atendido o es cerrado, abrir directamente
+      this.casoSeleccionado = caso;
+      sessionStorage.setItem(`chatAbierto_${this.tipoVista}`, caso.id);
     }
+  }
+
+  private recargarCasoActualizado(casoId: string): void {
+    // Usar forkJoin para obtener ambos estados en paralelo (mismo patrón que cargarCasosEnProceso)
+    forkJoin({
+      enProceso: this.casosService.getCasosPorEstado(0, 0, 10).pipe(
+        catchError(error => {
+          console.warn('Error al recargar casos en proceso:', error);
+          return of({ listadoCasos: [] });
+        })
+      ),
+      abiertos: this.casosService.getCasosPorEstado(1, 0, 10).pipe(
+        catchError(error => {
+          console.warn('Error al recargar casos abiertos:', error);
+          return of({ listadoCasos: [] });
+        })
+      )
+    }).subscribe(({ enProceso, abiertos }) => {
+      const todosLosCasos = [
+        ...(enProceso?.listadoCasos || []),
+        ...(abiertos?.listadoCasos || [])
+      ];
+
+      // Encontrar el caso actualizado
+      const casoActualizado = todosLosCasos.find(c => c.id === casoId);
+
+      if (casoActualizado) {
+        // Actualizar el caso en la lista local
+        const index = this.casos.findIndex(c => c.id === casoId);
+        if (index !== -1) {
+          this.casos[index] = casoActualizado;
+        }
+
+        // Abrir el chat con el caso actualizado
+        this.casoSeleccionado = casoActualizado;
+        sessionStorage.setItem(`chatAbierto_${this.tipoVista}`, casoActualizado.id);
+        this.cdr.detectChanges();
+      } else {
+        console.warn('No se pudo encontrar el caso actualizado:', casoId);
+      }
+    });
   }
 
   cerrarChat(): void {
@@ -340,11 +484,18 @@ export class CasosComponent implements OnInit {
     else if (+caso.estado === 2) this.cerrarCaso(caso.id);
   }
 
-  atenderCaso(casoId: string): void {
+  atenderCaso(casoId: string, callback?: () => void): void {
     this.adminService.atenderCaso(casoId).subscribe({
       next: response => {
         alert('Caso atendido exitosamente');
-        this.cargarCasos();
+        // Si hay callback, ejecutarlo (usado cuando se abre el chat)
+        if (callback) {
+          callback();
+        } else {
+          // Si no hay callback, mostrar alerta y recargar casos (cambio de estado manual)
+          alert('Caso atendido exitosamente');
+          this.cargarCasos();
+        }
       },
       error: error => {
         // Si hay error, volver a cargar los casos para reflejar el estado real
@@ -378,6 +529,51 @@ export class CasosComponent implements OnInit {
 
   onCasoCreado(caso: any): void {
     this.abrirChat(caso);
+  }
+
+  obtenerTipo(caso: Caso): string {
+    // Solo retornar del cache, nunca hacer peticiones HTTP aquí
+    if (this.tiposCache.has(caso.tipoId)) {
+      return this.tiposCache.get(caso.tipoId)!.nombre;
+    }
+
+    // Si no está en cache, retornar placeholder
+    // (los tipos deberían cargarse previamente en cargarTiposDeCasos)
+    return 'Cargando...';
+  }
+
+  private cargarTiposDeCasos(casos: Caso[]): void {
+    // Obtener los tipoIds únicos que no están en cache
+    const tiposIdsUnicos = [...new Set(casos.map(c => c.tipoId))];
+    const tiposIdsNoEnCache = tiposIdsUnicos.filter(id => !this.tiposCache.has(id));
+
+    // Si no hay tipos para cargar, salir
+    if (tiposIdsNoEnCache.length === 0) {
+      return;
+    }
+
+    // Crear un array de observables para cargar todos los tipos en paralelo
+    const requests = tiposIdsNoEnCache.map(tipoId =>
+      this.tiposService.obtenerTipoPorId(tipoId).pipe(
+        catchError(error => {
+          console.error(`Error al obtener tipo ${tipoId}:`, error);
+          return of(null);
+        })
+      )
+    );
+
+    // Ejecutar todas las peticiones en paralelo
+    forkJoin(requests).subscribe(responses => {
+      responses.forEach((response, index) => {
+        if (response?.Tipo) {
+          const tipoId = tiposIdsNoEnCache[index];
+          this.tiposCache.set(tipoId, response.Tipo);
+        }
+      });
+
+      // Forzar detección de cambios una sola vez
+      this.cdr.detectChanges();
+    });
   }
 
   // Getter para saber si estamos en modo solo lectura (casos cerrados)

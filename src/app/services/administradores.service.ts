@@ -16,4 +16,8 @@ import { API_SAC } from '../app.constants';
     atenderCaso(casoId: string) {
         return this.http.put<any>(`${this.apiUrl}/administradores/asignarAdminAbreCaso/${casoId}`, {});
     }
+
+    obtenerAdminPorId(adminId: string) {
+      return this.http.get<any>(`${this.apiUrl}/administradores/obtenerAdminPorId/${adminId}`);
+    }
 }

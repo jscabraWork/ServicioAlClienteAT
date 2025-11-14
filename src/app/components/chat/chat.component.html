@@ -1,12 +1,12 @@
 <div class="chat-container">
   <div class="chat-header">
     <div>
-      <h3>Chat - {{ caso.tipo.nombre }}</h3>
+      <h3>Chat - {{ tipo.nombre }}</h3>
       <span class="chat-cliente">{{ caso.numeroUsuario }}</span>
       <br>
-      <span class="chat-info-asesor">Caso abierto por: {{ caso.adminAbre.nombre }}</span>
+      <span class="chat-info-asesor">Caso abierto por: {{ adminAbre.nombre }}</span>
       <br>
-      <span class="chat-info-asesor" *ngIf="modoSoloLectura">Caso cerrado por: {{ caso.adminCierra.nombre }}</span>
+      <span class="chat-info-asesor" *ngIf="modoSoloLectura">Caso cerrado por: {{ adminCierra.nombre }} el {{ formatearFecha(caso.fechaResolucion) }}</span>
     </div>
     <button class="btn-cerrar-chat" (click)="cerrarChat()">✕</button>
   </div>

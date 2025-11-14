@@ -17,4 +17,8 @@ export class TiposService {
     return this.http.get<any>(`${this.apiUrl}/tipos`);
   }
 
+  obtenerTipoPorId(tipoId: string) {
+    return this.http.get<any>(`${this.apiUrl}/tipos/obtenerTipoPorId/${tipoId}`);
+  }
+
 }

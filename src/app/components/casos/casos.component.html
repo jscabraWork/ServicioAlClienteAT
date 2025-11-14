@@ -18,8 +18,8 @@
         (input)="filtrarCasos()">
     </div>
 
-    <div class="casos-lista">
-      <div *ngIf="casos.length === 0" class="empty-message">
+    <div class="casos-lista" #casosLista>
+      <div *ngIf="casos.length === 0 && !cargandoMasCasos" class="empty-message">
         {{ mensajeVacio }}
       </div>
 
@@ -33,7 +33,7 @@
         <div class="chat-content">
           <div class="chat-header">
             <div class="chat-title">
-              <span class="nombre">{{ caso.tipo.nombre }} - {{ caso.numeroUsuario }}</span>
+              <span class="nombre">{{ obtenerTipo(caso) }} - {{ caso.numeroUsuario }}</span>
             </div>
             <span class="hora">{{ obtenerHora(caso.id) }}</span>
           </div>
@@ -67,6 +67,12 @@
         <div
           class="notification-badge"
           *ngIf="tipoVista === 'en-proceso' && caso.estado === 0"></div>
+      </div>
+
+      <!-- Indicador de carga en la parte inferior -->
+      <div class="loading-indicator" *ngIf="cargandoMasCasos">
+        <div class="spinner"></div>
+        <span>Cargando casos...</span>
       </div>
     </div>
   </div>

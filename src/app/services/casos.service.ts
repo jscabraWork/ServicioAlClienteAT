@@ -16,8 +16,8 @@ export class CasosService {
 
   constructor(private http: HttpClient) {}
 
-  getCasosPorEstado(estado: number){
-    return this.http.get<any>(`${this.apiUrl}/casos/obtenerCasosPorEstado/${estado}`);
+  getCasosPorEstado(estado: number, page: number, size: number){
+    return this.http.get<any>(`${this.apiUrl}/casos/obtenerCasosPorEstado/${estado}?page=${page}&size=${size}`);
   }
 
   // Cerrar un caso

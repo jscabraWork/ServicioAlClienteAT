@@ -9,7 +9,7 @@ export interface Caso {
   numeroCaso: string;
   estado: number;
   numeroUsuario: string;
-  tipo: Tipo;
-  adminAbre: Administrador;
-  adminCierra: Administrador;
+  tipoId: string;
+  adminAbreId: string;
+  adminCierraId: string;
 }
