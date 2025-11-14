@@ -20,6 +20,16 @@ export class CasosService {
     return this.http.get<any>(`${this.apiUrl}/casos/obtenerCasosPorEstado/${estado}?page=${page}&size=${size}`);
   }
 
+  // Buscar casos por número de celular con paginación
+  buscarCasosPorCelular(numeroCelular: string, estado: number, page: number, size: number) {
+    return this.http.get<any>(`${this.apiUrl}/casos/buscarPorCelular/${numeroCelular}/${estado}?page=${page}&size=${size}`);
+  }
+
+  // Marcar caso como visto (resetea contador de mensajes no leídos)
+  marcarCasoComoVisto(casoId: string) {
+    return this.http.put<any>(`${this.apiUrl}/casos/marcarComoVisto/${casoId}`, {});
+  }
+
   // Cerrar un caso
   cerrarCaso(casoId: string) {
     return this.http.put<any>(`${this.apiUrl}/casos/cerrarCaso/${casoId}`, {});

@@ -12,4 +12,6 @@ export interface Caso {
   tipoId: string;
   adminAbreId: string;
   adminCierraId: string;
+  mensajesNoLeidos: number; // Contador de mensajes no leídos
+  ultimaVezVisto: Date; // Timestamp de cuando el asesor vio el chat por última vez
 }

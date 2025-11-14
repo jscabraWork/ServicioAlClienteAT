@@ -121,6 +121,35 @@ export class WebSocketService {
         return subject.asObservable();
     }
 
+    // Escuchar mensajes nuevos en cualquier caso (para actualizar contador de no leídos)
+    suscribirAMensajesNuevos(): Observable<any> {
+        const subject = new Subject<any>();
+
+        const suscribir = () => {
+            this.client.subscribe(`/topic/mensajes/nuevos`, (message) => {
+                const nuevoMensaje = JSON.parse(message.body);
+                subject.next(nuevoMensaje);
+            });
+        };
+
+        if (this.conectado) {
+            suscribir();
+        } else {
+            const intervalo = setInterval(() => {
+                if (this.conectado) {
+                    suscribir();
+                    clearInterval(intervalo);
+                }
+            }, 100);
+        }
+
+        if (!this.client.active) {
+            this.client.activate();
+        }
+
+        return subject.asObservable();
+    }
+
     desconectar() {
         if (this.client.active) {
             this.client.deactivate();

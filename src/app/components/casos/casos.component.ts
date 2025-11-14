@@ -1,4 +1,4 @@
-import { ChangeDetectorRef, Component, NgZone, OnInit, ViewChild, ElementRef, AfterViewInit } from '@angular/core';
+import { ChangeDetectorRef, Component, NgZone, OnInit, ViewChild, ElementRef, AfterViewInit, OnDestroy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute } from '@angular/router';
@@ -7,12 +7,13 @@ import { Caso } from '../../models/caso.model';
 import { ChatComponent } from '../chat/chat.component';
 import { NuevaConversacionComponent } from '../nueva-conversacion/nueva-conversacion.component';
 import { WebSocketService } from '../../services/websocket.service';
-import { catchError, firstValueFrom, forkJoin, of } from 'rxjs';
+import { catchError, firstValueFrom, forkJoin, of, Subject, debounceTime, distinctUntilChanged, Subscription } from 'rxjs';
 import { AdministradoresService } from '../../services/administradores.service';
 import { Mensaje } from '../../models/mensaje.model';
 import { MensajesService } from '../../services/mensajes.service';
 import { TiposService } from '../../services/tipos.service';
 import { Tipo } from '../../models/tipo.model';
+import { NotificacionesService } from '../../services/notificaciones.service';
 
 type TipoVista = 'en-proceso' | 'cerrados';
 
@@ -23,7 +24,7 @@ type TipoVista = 'en-proceso' | 'cerrados';
   templateUrl: './casos.component.html',
   styleUrls: ['./casos.component.scss']
 })
-export class CasosComponent implements OnInit, AfterViewInit {
+export class CasosComponent implements OnInit, AfterViewInit, OnDestroy {
   @ViewChild('casosLista') casosListaContainer!: ElementRef;
 
   casos: Caso[] = [];
@@ -53,6 +54,15 @@ export class CasosComponent implements OnInit, AfterViewInit {
   // Cache de tipos para evitar peticiones repetidas
   tiposCache: Map<string, Tipo> = new Map();
 
+  // Variables para búsqueda dinámica
+  private busquedaSubject = new Subject<string>();
+  enModoBusqueda: boolean = false;
+
+  // Variables para almacenar suscripciones de WebSocket
+  private nuevosCasosSubscription?: Subscription;
+  private casosAtendidosSubscription?: Subscription;
+  private mensajesNuevosSubscription?: Subscription;
+
   constructor(
     private casosService: CasosService,
     private adminService: AdministradoresService,
@@ -61,18 +71,30 @@ export class CasosComponent implements OnInit, AfterViewInit {
     private cdr: ChangeDetectorRef,
     private wsService: WebSocketService,
     private ngZone: NgZone,
-    private route: ActivatedRoute
+    private route: ActivatedRoute,
+    private notificacionesService: NotificacionesService
   ) {}
 
   ngOnInit(): void {
     const usuarioEntidad = JSON.parse(sessionStorage.getItem('usuarioEntidad') || '{}');
     this.idAsesor = usuarioEntidad?.numeroDocumento || '';
 
+    // Configurar búsqueda dinámica con debounce
+    this.busquedaSubject.pipe(
+      debounceTime(500), // Esperar 500ms después de que el usuario deje de escribir
+      distinctUntilChanged() // Solo ejecutar si el valor cambió
+    ).subscribe(termino => {
+      this.realizarBusqueda(termino);
+    });
+
     // Detectar el tipo de vista desde la ruta
     this.route.data.subscribe(data => {
       this.tipoVista = data['tipo'] || 'en-proceso';
       this.resetearPaginacion();
       this.cargarCasos();
+
+      // Destruir WebSockets existentes antes de cambiar de vista
+      this.destruirWebSockets();
 
       // Solo inicializar WebSocket si estamos en vista "en-proceso"
       if (this.tipoVista === 'en-proceso') {
@@ -95,6 +117,14 @@ export class CasosComponent implements OnInit, AfterViewInit {
       // Verificar si hay un chat abierto guardado en sessionStorage
       this.restaurarChatAbierto();
     }
+  }
+
+  ngOnDestroy(): void {
+    // Limpiar subscripciones de búsqueda
+    this.busquedaSubject.complete();
+
+    // Destruir subscripciones de WebSocket
+    this.destruirWebSockets();
   }
 
   ngAfterViewInit(): void {
@@ -154,7 +184,7 @@ export class CasosComponent implements OnInit, AfterViewInit {
 
   private inicializarWebSockets(): void {
     // WebSocket para mostrar nuevos casos que aparecen
-    this.wsService.obtenerNuevosCasos().subscribe(newCaso => {
+    this.nuevosCasosSubscription = this.wsService.obtenerNuevosCasos().subscribe(newCaso => {
       console.log('Nuevo caso recibido:', newCaso);
       // Solo agregar si no existe ya en la lista
       const existe = this.casos.some(c => c.id === newCaso.id);
@@ -170,13 +200,29 @@ export class CasosComponent implements OnInit, AfterViewInit {
           // Cargar tipo del nuevo caso
           this.cargarTiposDeCasos([newCaso]);
 
+          // Reproducir notificación de nuevo caso
+          this.tiposService.obtenerTipoPorId(newCaso.tipoId).subscribe({
+            next: response => {
+              this.notificacionesService.notificarNuevoCaso(
+                newCaso.numeroUsuario,
+                response.Tipo?.nombre || 'Caso'
+              );
+            },
+            error: () => {
+              this.notificacionesService.notificarNuevoCaso(
+                newCaso.numeroUsuario,
+                'Caso'
+              );
+            }
+          });
+
           this.cdr.markForCheck();
         })
       }
     });
 
     // WebSocket para casos atendidos (actualizar estado)
-    this.wsService.suscribirACasosAtendidos().subscribe(casoAtendido => {
+    this.casosAtendidosSubscription = this.wsService.suscribirACasosAtendidos().subscribe(casoAtendido => {
       console.log('Caso atendido:', casoAtendido);
       const casoIndex = this.casos.findIndex(c => c.id === casoAtendido.id);
       if (casoIndex !== -1) {
@@ -184,11 +230,86 @@ export class CasosComponent implements OnInit, AfterViewInit {
         this.cdr.detectChanges();
       }
     });
+
+    // WebSocket para mensajes nuevos (actualizar contador de no leídos)
+    this.mensajesNuevosSubscription = this.wsService.suscribirAMensajesNuevos().subscribe(nuevoMensaje => {
+      console.log('Mensaje nuevo recibido por WebSocket global:', nuevoMensaje);
+      this.ngZone.run(() => {
+        // Buscar el caso en la lista
+        const casoIndex = this.casos.findIndex(c => c.id === nuevoMensaje.casoId);
+
+        if (casoIndex !== -1) {
+          // Solo incrementar si el chat NO está abierto actualmente
+          // Y solo si el mensaje es del USUARIO (no del asesor)
+          if (this.casoSeleccionado?.id !== nuevoMensaje.casoId && nuevoMensaje.esDelUsuario !== false) {
+            // Incrementar contador de mensajes no leídos
+            this.casos[casoIndex].mensajesNoLeidos = (this.casos[casoIndex].mensajesNoLeidos || 0) + 1;
+
+            // Reproducir sonido de notificación para mensaje nuevo
+            const caso = this.casos[casoIndex];
+            const mensajeTexto = nuevoMensaje.mensaje ||
+              (nuevoMensaje.tipo === 'image' ? '📷 Imagen' :
+               nuevoMensaje.tipo === 'video' ? '🎥 Video' :
+               nuevoMensaje.tipo === 'audio' ? '🎵 Audio' :
+               'Mensaje');
+
+            this.notificacionesService.notificarMensajeNuevo(
+              caso.numeroUsuario,
+              mensajeTexto
+            );
+          }
+
+          // Actualizar el último mensaje en la vista
+          const fecha = new Date(nuevoMensaje.fecha);
+          const day = fecha.getDate();
+          const months = ['Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun', 'Jul', 'Ago', 'Sep', 'Oct', 'Nov', 'Dic'];
+          const month = months[fecha.getMonth()];
+          const hours = fecha.getHours();
+          const minutes = fecha.getMinutes();
+          const ampm = hours >= 12 ? 'pm' : 'am';
+          const hours12 = hours % 12 || 12;
+          const minutesStr = minutes < 10 ? '0' + minutes : minutes;
+          const fechaFormateada = `${day}/${month} ${hours12}:${minutesStr}${ampm}`;
+
+          this.ultimosMensajes.set(nuevoMensaje.casoId, {
+            texto: nuevoMensaje.mensaje || '',
+            fecha: fechaFormateada
+          });
+
+          this.cdr.detectChanges();
+        }
+      });
+    });
+  }
+
+  private destruirWebSockets(): void {
+    // Destruir todas las suscripciones de WebSocket
+    if (this.nuevosCasosSubscription) {
+      this.nuevosCasosSubscription.unsubscribe();
+      this.nuevosCasosSubscription = undefined;
+    }
+
+    if (this.casosAtendidosSubscription) {
+      this.casosAtendidosSubscription.unsubscribe();
+      this.casosAtendidosSubscription = undefined;
+    }
+
+    if (this.mensajesNuevosSubscription) {
+      this.mensajesNuevosSubscription.unsubscribe();
+      this.mensajesNuevosSubscription = undefined;
+    }
   }
 
   cargarCasos(): void {
     if (this.cargandoMasCasos || !this.hayMasCasos) return;
 
+    // Si estamos en modo búsqueda, cargar resultados de búsqueda
+    if (this.enModoBusqueda && this.filtro.trim() !== '') {
+      this.cargarResultadosBusqueda(this.filtro.trim());
+      return;
+    }
+
+    // De lo contrario, cargar casos normalmente
     if (this.tipoVista === 'en-proceso') {
       this.cargarCasosEnProceso();
     } else {
@@ -310,6 +431,20 @@ export class CasosComponent implements OnInit, AfterViewInit {
   }
 
   abrirChat(caso: Caso): void {
+    // Marcar el caso como visto (resetear contador de mensajes no leídos)
+    if (caso.mensajesNoLeidos > 0) {
+      this.casosService.marcarCasoComoVisto(caso.id).subscribe({
+        next: () => {
+          // Resetear el contador localmente
+          caso.mensajesNoLeidos = 0;
+          this.cdr.detectChanges();
+        },
+        error: (error) => {
+          console.error('Error al marcar caso como visto:', error);
+        }
+      });
+    }
+
     // Solo atender caso automáticamente si estamos en vista "en-proceso" y el estado es 0
     if(this.tipoVista === 'en-proceso' && caso.estado === 0) {
       // Primero atender el caso y luego abrir el chat
@@ -448,7 +583,12 @@ export class CasosComponent implements OnInit, AfterViewInit {
   }
 
   actualizarUltimoMensaje(nuevoMensaje: any): void {
-    if (this.casoSeleccionado && nuevoMensaje) {
+    if (nuevoMensaje) {
+      // Obtener el casoId del mensaje (puede venir del chat abierto o de cualquier otro caso)
+      const casoId = nuevoMensaje.casoId || this.casoSeleccionado?.id;
+
+      if (!casoId) return;
+
       // Formatear la fecha del nuevo mensaje
       const fecha = new Date(nuevoMensaje.fecha);
       const day = fecha.getDate();
@@ -462,10 +602,19 @@ export class CasosComponent implements OnInit, AfterViewInit {
       const fechaFormateada = `${day}/${month} ${hours12}:${minutesStr}${ampm}`;
 
       // Actualizar el Map con el nuevo mensaje
-      this.ultimosMensajes.set(this.casoSeleccionado.id, {
+      this.ultimosMensajes.set(casoId, {
         texto: nuevoMensaje.mensaje || '',
         fecha: fechaFormateada
       });
+
+      // Si el mensaje NO es del chat abierto actualmente, incrementar contador
+      // Solo incrementar si el mensaje es del USUARIO (no del asesor)
+      if (this.casoSeleccionado?.id !== casoId && nuevoMensaje.esDelUsuario !== false) {
+        const casoIndex = this.casos.findIndex(c => c.id === casoId);
+        if (casoIndex !== -1) {
+          this.casos[casoIndex].mensajesNoLeidos = (this.casos[casoIndex].mensajesNoLeidos || 0) + 1;
+        }
+      }
 
       // Forzar detección de cambios
       this.cdr.detectChanges();
@@ -506,17 +655,120 @@ export class CasosComponent implements OnInit, AfterViewInit {
   }
 
   filtrarCasos(): void {
-    const texto = this.filtro.trim().toLowerCase();
+    const texto = this.filtro.trim();
 
-    if(texto === ''){
-      this.casos = [...this.todosLosCasos];
+    if (texto === '') {
+      // Si el filtro está vacío, volver al listado normal
+      this.enModoBusqueda = false;
+      this.resetearPaginacion();
+      this.cargarCasos();
     } else {
-      this.casos = this.todosLosCasos.filter(caso =>
-        caso.numeroUsuario.toString().toLowerCase().includes(texto)
-      )
+      // Emitir el término de búsqueda al Subject (se procesará con debounce)
+      this.busquedaSubject.next(texto);
+    }
+  }
+
+  private realizarBusqueda(termino: string): void {
+    // Si el término está vacío, no hacer nada (ya se maneja en filtrarCasos)
+    if (termino.trim() === '') {
+      return;
     }
 
-    this.ordenarCasosPorFecha();
+    // Activar modo búsqueda y resetear paginación
+    this.enModoBusqueda = true;
+    this.resetearPaginacion();
+
+    // Cargar resultados de búsqueda
+    this.cargarResultadosBusqueda(termino);
+  }
+
+  private cargarResultadosBusqueda(termino: string): void {
+    if (this.cargandoMasCasos || !this.hayMasCasos) return;
+
+    this.cargandoMasCasos = true;
+
+    if (this.tipoVista === 'en-proceso') {
+      // Buscar en casos estado 0 y 1
+      forkJoin({
+        enProceso: this.casosService.buscarCasosPorCelular(termino, 0, this.paginaActual, this.tamanoPagina).pipe(
+          catchError(error => {
+            console.warn('Error al buscar casos en proceso:', error);
+            return of({ listadoCasos: [], mensaje: 'Sin resultados en proceso.' });
+          })
+        ),
+        abiertos: this.casosService.buscarCasosPorCelular(termino, 1, this.paginaActual, this.tamanoPagina).pipe(
+          catchError(error => {
+            console.warn('Error al buscar casos abiertos:', error);
+            return of({ listadoCasos: [], mensaje: 'Sin resultados abiertos.' });
+          })
+        )
+      }).subscribe(({ enProceso, abiertos }) => {
+        const nuevosCasos: any[] = [];
+
+        if (enProceso?.listadoCasos) {
+          nuevosCasos.push(...enProceso.listadoCasos);
+        }
+
+        if (abiertos?.listadoCasos?.length) {
+          nuevosCasos.push(...abiertos.listadoCasos);
+        }
+
+        // Verificar si hay más casos para cargar
+        this.hayMasCasos = nuevosCasos.length === this.tamanoPagina;
+
+        // Agregar casos sin duplicados
+        this.agregarCasos(nuevosCasos);
+
+        // Incrementar página para la próxima carga
+        this.paginaActual++;
+
+        // Cargar últimos mensajes y tipos
+        this.cargarUltimosMensajes(nuevosCasos);
+        this.cargarTiposDeCasos(nuevosCasos);
+
+        // Esperar antes de permitir nueva carga
+        setTimeout(() => {
+          this.cargandoMasCasos = false;
+          this.cdr.detectChanges();
+        }, 500);
+      });
+    } else {
+      // Buscar en casos cerrados (estado 2)
+      this.casosService.buscarCasosPorCelular(termino, 2, this.paginaActual, this.tamanoPagina).subscribe({
+        next: response => {
+          if (response?.listadoCasos) {
+            const nuevosCasos = response.listadoCasos;
+
+            // Verificar si hay más casos para cargar
+            this.hayMasCasos = nuevosCasos.length === this.tamanoPagina;
+
+            // Agregar casos sin duplicados
+            this.agregarCasos(nuevosCasos);
+
+            // Incrementar página para la próxima carga
+            this.paginaActual++;
+
+            // Cargar últimos mensajes y tipos
+            this.cargarUltimosMensajes(nuevosCasos);
+            this.cargarTiposDeCasos(nuevosCasos);
+          } else {
+            this.hayMasCasos = false;
+          }
+
+          // Esperar antes de permitir nueva carga
+          setTimeout(() => {
+            this.cargandoMasCasos = false;
+            this.cdr.detectChanges();
+          }, 500);
+        },
+        error: error => {
+          console.error('Error al buscar casos cerrados:', error);
+          this.cargandoMasCasos = false;
+          this.hayMasCasos = false;
+          this.cdr.detectChanges();
+        }
+      });
+    }
   }
 
   abrirModalNuevoChat(): void {

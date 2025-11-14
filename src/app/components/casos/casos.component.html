@@ -63,10 +63,10 @@
           </ng-container>
         </div>
 
-        <!-- Badge de notificación solo en vista "en-proceso" y estado 0 -->
+        <!-- Badge de notificación: casos nuevos (estado 0) O mensajes no leídos -->
         <div
           class="notification-badge"
-          *ngIf="tipoVista === 'en-proceso' && caso.estado === 0"></div>
+          *ngIf="tipoVista === 'en-proceso' && (caso.estado === 0 || caso.mensajesNoLeidos > 0)"></div>
       </div>
 
       <!-- Indicador de carga en la parte inferior -->

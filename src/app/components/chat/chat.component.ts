@@ -1,6 +1,7 @@
-import { Component, Input, Output, EventEmitter, OnInit, OnChanges, SimpleChanges, ChangeDetectorRef, ViewChild, ElementRef, AfterViewChecked, NgZone } from '@angular/core';
+import { Component, Input, Output, EventEmitter, OnInit, OnChanges, SimpleChanges, ChangeDetectorRef, ViewChild, ElementRef, AfterViewChecked, OnDestroy, NgZone } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
+import { Subscription } from 'rxjs';
 import { CasosService } from '../../services/casos.service';
 import { Caso } from '../../models/caso.model';
 import { Mensaje } from '../../models/mensaje.model';
@@ -18,7 +19,7 @@ import { AdministradoresService } from '../../services/administradores.service';
   templateUrl: './chat.component.html',
   styleUrls: ['./chat.component.scss']
 })
-export class ChatComponent implements OnInit, OnChanges, AfterViewChecked {
+export class ChatComponent implements OnInit, OnChanges, AfterViewChecked, OnDestroy {
   @Input() caso!: Caso;
   @Input() modoSoloLectura: boolean = false;
   @Output() cerrar = new EventEmitter<void>();
@@ -28,6 +29,7 @@ export class ChatComponent implements OnInit, OnChanges, AfterViewChecked {
   mensajes: Mensaje[] = [];
   nuevoMensaje: string = '';
   private debeHacerScroll = false;
+  private mensajeSubscription?: Subscription;
 
   // Propiedades para multimedia
   archivoSeleccionado: File | null = null;
@@ -100,7 +102,7 @@ export class ChatComponent implements OnInit, OnChanges, AfterViewChecked {
 
     // Solo suscribirse a WebSocket si NO está en modo solo lectura
     if (!this.modoSoloLectura) {
-      this.wsService.suscribirACaso(this.caso.id).subscribe(
+      this.mensajeSubscription = this.wsService.suscribirACaso(this.caso.id).subscribe(
         (newMensaje) => {
           console.log('Nuevo mensaje recibido: ', newMensaje);
           // Ejecutar dentro de NgZone para asegurar que los event listeners funcionen correctamente
@@ -114,10 +116,65 @@ export class ChatComponent implements OnInit, OnChanges, AfterViewChecked {
     }
   }
 
+  ngOnDestroy(): void {
+    // Destruir suscripción al WebSocket cuando se destruye el componente
+    if (this.mensajeSubscription) {
+      this.mensajeSubscription.unsubscribe();
+    }
+  }
+
   ngOnChanges(changes: SimpleChanges): void {
     // Detectar cuando cambia el caso y recargar los mensajes
     if (changes['caso'] && !changes['caso'].firstChange) {
-      this.cargarMensajes();
+      // Destruir suscripción anterior del WebSocket
+      if (this.mensajeSubscription) {
+        this.mensajeSubscription.unsubscribe();
+      }
+
+      // Resetear variables de paginación
+      this.paginaActual = 0;
+      this.hayMasMensajes = true;
+      this.mensajes = [];
+
+      // Cargar información del nuevo caso
+      this.tiposService.obtenerTipoPorId(this.caso.tipoId).subscribe({
+        next: response => {
+          this.tipo = response.Tipo;
+        }
+      });
+
+      if(this.caso.adminAbreId) {
+        this.adminService.obtenerAdminPorId(this.caso.adminAbreId).subscribe({
+          next: response=> {
+            this.adminAbre = response.Admin;
+          }
+        });
+      }
+
+      if (this.caso.adminCierraId) {
+        this.adminService.obtenerAdminPorId(this.caso.adminCierraId).subscribe({
+          next: response=> {
+            this.adminCierra = response.Admin;
+          }
+        });
+      }
+
+      // Cargar mensajes del nuevo caso
+      this.cargarMensajes(true);
+
+      // Re-suscribirse al WebSocket del nuevo caso si NO está en modo solo lectura
+      if (!this.modoSoloLectura) {
+        this.mensajeSubscription = this.wsService.suscribirACaso(this.caso.id).subscribe(
+          (newMensaje) => {
+            console.log('Nuevo mensaje recibido: ', newMensaje);
+            this.ngZone.run(() => {
+              this.mensajes = [...this.mensajes, newMensaje];
+              this.nuevoMensajeRecibido.emit(newMensaje);
+              this.debeHacerScroll = true;
+            });
+          }
+        );
+      }
     }
   }
 
