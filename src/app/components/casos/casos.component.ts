@@ -8,12 +8,12 @@ import { ChatComponent } from '../chat/chat.component';
 import { NuevaConversacionComponent } from '../nueva-conversacion/nueva-conversacion.component';
 import { WebSocketService } from '../../services/websocket.service';
 import { catchError, firstValueFrom, forkJoin, of, Subject, debounceTime, distinctUntilChanged, Subscription } from 'rxjs';
-import { AdministradoresService } from '../../services/administradores.service';
 import { Mensaje } from '../../models/mensaje.model';
 import { MensajesService } from '../../services/mensajes.service';
 import { TiposService } from '../../services/tipos.service';
 import { Tipo } from '../../models/tipo.model';
 import { NotificacionesService } from '../../services/notificaciones.service';
+import { AsesoresService } from '../../services/asesores.service';
 
 type TipoVista = 'en-proceso' | 'cerrados';
 
@@ -65,7 +65,7 @@ export class CasosComponent implements OnInit, AfterViewInit, OnDestroy {
 
   constructor(
     private casosService: CasosService,
-    private adminService: AdministradoresService,
+    private asesorService: AsesoresService,
     private mensajesService: MensajesService,
     private tiposService: TiposService,
     private cdr: ChangeDetectorRef,
@@ -634,7 +634,7 @@ export class CasosComponent implements OnInit, AfterViewInit, OnDestroy {
   }
 
   atenderCaso(casoId: string, callback?: () => void): void {
-    this.adminService.atenderCaso(casoId).subscribe({
+    this.asesorService.atenderCaso(casoId).subscribe({
       next: response => {
         alert('Caso atendido exitosamente');
         // Si hay callback, ejecutarlo (usado cuando se abre el chat)

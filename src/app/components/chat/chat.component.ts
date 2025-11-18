@@ -8,9 +8,9 @@ import { Mensaje } from '../../models/mensaje.model';
 import { WebSocketService } from '../../services/websocket.service';
 import { MensajesService } from '../../services/mensajes.service';
 import { Tipo } from '../../models/tipo.model';
-import { Administrador } from '../../models/administrador.model';
+import { Asesor } from '../../models/asesor.model';
 import { TiposService } from '../../services/tipos.service';
-import { AdministradoresService } from '../../services/administradores.service';
+import { AsesoresService } from '../../services/asesores.service';
 
 @Component({
   selector: 'app-chat',
@@ -57,15 +57,15 @@ export class ChatComponent implements OnInit, OnChanges, AfterViewChecked, OnDes
   private scrollTimeout: any = null;
 
   tipo!: Tipo;
-  adminAbre!: Administrador;
-  adminCierra!: Administrador;
+  asesorAbre!: Asesor;
+  asesorCierra!: Asesor;
 
 
   constructor(
     private casosService: CasosService,
     private mensajesService: MensajesService,
     private tiposService: TiposService,
-    private adminService: AdministradoresService,
+    private asesorService: AsesoresService,
     private wsService: WebSocketService,
     private cdr: ChangeDetectorRef,
     private ngZone: NgZone
@@ -81,18 +81,18 @@ export class ChatComponent implements OnInit, OnChanges, AfterViewChecked, OnDes
       }
     })
 
-    if(this.caso.adminAbreId) {
-        this.adminService.obtenerAdminPorId(this.caso.adminAbreId).subscribe({
+    if(this.caso.asesorAbreId) {
+        this.asesorService.obtenerAsesorPorId(this.caso.asesorAbreId).subscribe({
         next: response=> {
-          this.adminAbre = response.Admin;
+          this.asesorAbre = response.Asesor;
         }
       })
     }
     
-    if (this.caso.adminCierraId) {
-      this.adminService.obtenerAdminPorId(this.caso.adminCierraId).subscribe({
+    if (this.caso.asesorCierraId) {
+      this.asesorService.obtenerAsesorPorId(this.caso.asesorCierraId).subscribe({
         next: response=> {
-          this.adminCierra = response.Admin;
+          this.asesorCierra = response.Admin;
         }
       })
     }
@@ -143,18 +143,18 @@ export class ChatComponent implements OnInit, OnChanges, AfterViewChecked, OnDes
         }
       });
 
-      if(this.caso.adminAbreId) {
-        this.adminService.obtenerAdminPorId(this.caso.adminAbreId).subscribe({
+      if(this.caso.asesorAbreId) {
+        this.asesorService.obtenerAsesorPorId(this.caso.asesorAbreId).subscribe({
           next: response=> {
-            this.adminAbre = response.Admin;
+            this.asesorAbre = response.Admin;
           }
         });
       }
 
-      if (this.caso.adminCierraId) {
-        this.adminService.obtenerAdminPorId(this.caso.adminCierraId).subscribe({
+      if (this.caso.asesorCierraId) {
+        this.asesorService.obtenerAsesorPorId(this.caso.asesorCierraId).subscribe({
           next: response=> {
-            this.adminCierra = response.Admin;
+            this.asesorCierra = response.Admin;
           }
         });
       }

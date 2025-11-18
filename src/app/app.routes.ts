@@ -8,8 +8,8 @@ export const routes: Routes = [
   { path: '', component: LoginComponent},
   { path: 'login', component: LoginComponent},
   { path: 'home', component: LoginComponent},
-  { path: 'casos-en-proceso/:nombreAdmin', component: CasosComponent, data: { tipo: 'en-proceso' } },
-  { path: 'casos-cerrados/:nombreAdmin', component: CasosComponent, data: { tipo: 'cerrados' } },
+  { path: 'casos-en-proceso/:nombreAsesor', component: CasosComponent, data: { tipo: 'en-proceso' } },
+  { path: 'casos-cerrados/:nombreAsesor', component: CasosComponent, data: { tipo: 'cerrados' } },
   { path: 'crear-asesor', component: CrearAsesorComponent },
   { path: 'logout', component: LogoutComponent }
 ];

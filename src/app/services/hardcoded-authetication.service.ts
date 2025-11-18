@@ -4,20 +4,16 @@ import { Injectable } from '@angular/core';
   providedIn: 'root'
 })
 export class HardcodedAutheticationService {
-  getAdmin(){
-    return sessionStorage.getItem('administrador');
-  }
-
   getAsesor(){
     return sessionStorage.getItem('asesor');
   }
 
-  adminLoggin(){
-    let usuario =sessionStorage.getItem('administrador');
+  asesorLogin(){
+    let usuario =sessionStorage.getItem('asesor');
     return !(usuario==null);
   }
 
   logout(){
-    sessionStorage.removeItem('administrador');    
+    sessionStorage.removeItem('asesor');    
   }
 }

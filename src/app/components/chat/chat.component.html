@@ -4,9 +4,9 @@
       <h3>Chat - {{ tipo.nombre }}</h3>
       <span class="chat-cliente">{{ caso.numeroUsuario }}</span>
       <br>
-      <span class="chat-info-asesor">Caso abierto por: {{ adminAbre.nombre }}</span>
+      <span class="chat-info-asesor">Caso abierto por: {{ asesorAbre.nombre }}</span>
       <br>
-      <span class="chat-info-asesor" *ngIf="modoSoloLectura">Caso cerrado por: {{ adminCierra.nombre }} el {{ formatearFecha(caso.fechaResolucion) }}</span>
+      <span class="chat-info-asesor" *ngIf="modoSoloLectura">Caso cerrado por: {{ asesorCierra.nombre }} el {{ formatearFecha(caso.fechaResolucion) }}</span>
     </div>
     <button class="btn-cerrar-chat" (click)="cerrarChat()">✕</button>
   </div>
@@ -23,7 +23,7 @@
          [class.mensaje-cliente]="mensaje.esRespuesta === false"
          [class.mensaje-agente]="mensaje.esRespuesta === true">
       <div class="mensaje-header">
-        <span class="mensaje-emisor">{{ mensaje.esRespuesta === false ? caso.numeroUsuario : 'Asesor ID - ' + mensaje.administradorNumeroDocumento }}</span>
+        <span class="mensaje-emisor">{{ mensaje.esRespuesta === false ? caso.numeroUsuario : 'Asesor ID - ' + mensaje.asesorNumeroDocumento }}</span>
         <span class="mensaje-fecha">{{ mensaje.fecha | date: 'hh:mm a' }}</span>
       </div>
       <div class="mensaje-texto" *ngIf="mensaje.tipoContenido === 'text'">{{ mensaje.mensaje }}</div>

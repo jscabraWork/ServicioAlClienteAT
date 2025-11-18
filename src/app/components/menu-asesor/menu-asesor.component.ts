@@ -3,13 +3,13 @@ import { Component, HostListener, Input, OnInit } from '@angular/core';
 import { RouterModule } from '@angular/router';
 
 @Component({
-  selector: 'app-menu-admin',
+  selector: 'app-menu-asesor',
   standalone: true,
   imports: [CommonModule, RouterModule],
-  templateUrl: './menu-admin.component.html',
-  styleUrl: './menu-admin.component.scss'
+  templateUrl: './menu-asesor.component.html',
+  styleUrl: './menu-asesor.component.scss'
 })
-export class MenuAdminComponent implements OnInit {
+export class MenuAsesorComponent implements OnInit {
   @Input() nombre: string = '';
   isCollapsed = false;
   isMobile = false;
@@ -28,11 +28,11 @@ export class MenuAdminComponent implements OnInit {
   }
 
   private updateNavItems() {
-    const administrador = sessionStorage.getItem('administrador')  || sessionStorage.getItem('asesor');
+    const asesor = sessionStorage.getItem('asesor');
     this.navItems = [
       { route: `/crear-asesor`, icon: 'assets/agregarAsesor.png', label: 'Crear Asesor' },
-      { route: `/casos-en-proceso/${administrador}`, icon: 'assets/casosProceso.png', label: 'Casos en proceso' },
-      { route: `/casos-cerrados/${administrador}`, icon: 'assets/casosCerrados.png', label: 'Casos cerrados' },
+      { route: `/casos-en-proceso/${asesor}`, icon: 'assets/casosProceso.png', label: 'Casos en proceso' },
+      { route: `/casos-cerrados/${asesor}`, icon: 'assets/casosCerrados.png', label: 'Casos cerrados' },
       { route: '/logout', icon: 'assets/cerrar-sesion.png', label: 'Cerrar Sesión', isLogout: true }
     ];
   }

@@ -1,7 +1,7 @@
 <div class="sac-layout">
-  <app-menu-admin *ngIf="autenticador.getAdmin() || autenticador.getAsesor()"></app-menu-admin>
+  <app-menu-asesor *ngIf="autenticador.getAsesor()"></app-menu-asesor>
 
-  <main [ngClass]="{'main-content': autenticador.getAdmin() || autenticador.getAsesor(), 'full-screen': !(autenticador.getAdmin() || autenticador.getAsesor())}">
+  <main [ngClass]="{'main-content': autenticador.getAsesor(), 'full-screen': !(autenticador.getAsesor())}">
     <router-outlet></router-outlet>
   </main>
 </div>

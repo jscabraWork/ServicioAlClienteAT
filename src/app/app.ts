@@ -1,13 +1,13 @@
 import { Component } from '@angular/core';
 import { RouterOutlet, RouterLink, RouterLinkActive, Router, NavigationEnd } from '@angular/router';
 import { CommonModule } from '@angular/common';
-import { MenuAdminComponent } from './components/menu-admin/menu-admin.component';
+import { MenuAsesorComponent } from './components/menu-asesor/menu-asesor.component';
 import { HardcodedAutheticationService } from './services/hardcoded-authetication.service';
 import { filter } from 'rxjs';
 
 @Component({
   selector: 'app-root',
-  imports: [RouterOutlet, MenuAdminComponent, CommonModule],
+  imports: [RouterOutlet, CommonModule, MenuAsesorComponent],
   templateUrl: './app.html',
   styleUrl: './app.scss'
 })
