@@ -92,7 +92,7 @@ export class ChatComponent implements OnInit, OnChanges, AfterViewChecked, OnDes
     if (this.caso.asesorCierraId) {
       this.asesorService.obtenerAsesorPorId(this.caso.asesorCierraId).subscribe({
         next: response=> {
-          this.asesorCierra = response.Admin;
+          this.asesorCierra = response.Asesor;
         }
       })
     }
