@@ -11,15 +11,8 @@ export class NotificacionesService {
     // Crear elemento de audio para las notificaciones
     this.audioNotificacion = new Audio();
 
-    // Intentar cargar sonido personalizado, si falla usar sonido generado
-    this.audioNotificacion.src = 'assets/sounds/notification.mp3';
-    this.audioNotificacion.load();
-
-    // Si el archivo no existe, usar un beep generado con Web Audio API
-    this.audioNotificacion.onerror = () => {
-      console.log('Usando sonido generado para notificaciones');
-      this.generarSonidoBeep();
-    };
+    // Generar sonido beep usando Web Audio API
+    this.generarSonidoBeep();
 
     // Verificar permiso de notificaciones del navegador
     if ('Notification' in window) {

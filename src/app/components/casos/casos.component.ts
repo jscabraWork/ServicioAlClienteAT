@@ -96,9 +96,12 @@ export class CasosComponent implements OnInit, AfterViewInit, OnDestroy {
       // Destruir WebSockets existentes antes de cambiar de vista
       this.destruirWebSockets();
 
-      // Solo inicializar WebSocket si estamos en vista "en-proceso"
+      // Inicializar WebSockets según la vista
       if (this.tipoVista === 'en-proceso') {
         this.inicializarWebSockets();
+      } else {
+        // En vista de casos cerrados, solo suscribirse a mensajes nuevos para notificaciones
+        this.inicializarWebSocketMensajesNuevos();
       }
     });
 
@@ -180,6 +183,30 @@ export class CasosComponent implements OnInit, AfterViewInit, OnDestroy {
         }
       }, 500);
     }
+  }
+
+  private inicializarWebSocketMensajesNuevos(): void {
+    // WebSocket para mensajes nuevos - solo notificaciones
+    // Este método se usa cuando estamos en la vista de casos cerrados
+    this.mensajesNuevosSubscription = this.wsService.suscribirAMensajesNuevos().subscribe(nuevoMensaje => {
+      console.log('Mensaje nuevo recibido por WebSocket global (vista cerrados):', nuevoMensaje);
+      this.ngZone.run(() => {
+        // Solo reproducir notificación si el mensaje es del usuario y NO del asesor
+        if (nuevoMensaje.esDelUsuario !== false) {
+          const mensajeTexto = nuevoMensaje.mensaje ||
+            (nuevoMensaje.tipo === 'image' ? '📷 Imagen' :
+             nuevoMensaje.tipo === 'video' ? '🎥 Video' :
+             nuevoMensaje.tipo === 'audio' ? '🎵 Audio' :
+             'Mensaje');
+
+          // Notificar incluso si estamos en la vista de casos cerrados
+          this.notificacionesService.notificarMensajeNuevo(
+            nuevoMensaje.numeroUsuario || 'Usuario',
+            mensajeTexto
+          );
+        }
+      });
+    });
   }
 
   private inicializarWebSockets(): void {
