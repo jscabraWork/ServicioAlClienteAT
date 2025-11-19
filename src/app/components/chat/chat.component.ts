@@ -56,9 +56,9 @@ export class ChatComponent implements OnInit, OnChanges, AfterViewChecked, OnDes
   hayMasMensajes: boolean = true;
   private scrollTimeout: any = null;
 
-  tipo!: Tipo;
-  asesorAbre!: Asesor;
-  asesorCierra!: Asesor;
+  tipo?: Tipo;
+  asesorAbre?: Asesor;
+  asesorCierra?: Asesor;
 
 
   constructor(
@@ -104,7 +104,6 @@ export class ChatComponent implements OnInit, OnChanges, AfterViewChecked, OnDes
     if (!this.modoSoloLectura) {
       this.mensajeSubscription = this.wsService.suscribirACaso(this.caso.id).subscribe(
         (newMensaje) => {
-          console.log('Nuevo mensaje recibido: ', newMensaje);
           // Ejecutar dentro de NgZone para asegurar que los event listeners funcionen correctamente
           this.ngZone.run(() => {
             this.mensajes = [...this.mensajes, newMensaje];
@@ -131,10 +130,28 @@ export class ChatComponent implements OnInit, OnChanges, AfterViewChecked, OnDes
         this.mensajeSubscription.unsubscribe();
       }
 
-      // Resetear variables de paginación
+      // IMPORTANTE: Resetear el estado de carga ANTES de cualquier otra operación
+      // para evitar que quede bloqueado de la carga anterior
+      // Forzar el reseteo dentro de NgZone
+      this.ngZone.run(() => {
+        this.cargandoMasMensajes = false;
+      });
+
+      // Limpiar cualquier timeout pendiente del scroll
+      if (this.scrollTimeout) {
+        clearTimeout(this.scrollTimeout);
+        this.scrollTimeout = null;
+      }
+
+      // Resetear variables de paginación y estado de carga
       this.paginaActual = 0;
       this.hayMasMensajes = true;
       this.mensajes = [];
+
+      // Resetear las propiedades del caso anterior para evitar mostrar datos incorrectos
+      this.tipo = undefined as any;
+      this.asesorAbre = undefined as any;
+      this.asesorCierra = undefined as any;
 
       // Cargar información del nuevo caso
       this.tiposService.obtenerTipoPorId(this.caso.tipoId).subscribe({
@@ -146,7 +163,7 @@ export class ChatComponent implements OnInit, OnChanges, AfterViewChecked, OnDes
       if(this.caso.asesorAbreId) {
         this.asesorService.obtenerAsesorPorId(this.caso.asesorAbreId).subscribe({
           next: response=> {
-            this.asesorAbre = response.Admin;
+            this.asesorAbre = response.Asesor;
           }
         });
       }
@@ -154,7 +171,7 @@ export class ChatComponent implements OnInit, OnChanges, AfterViewChecked, OnDes
       if (this.caso.asesorCierraId) {
         this.asesorService.obtenerAsesorPorId(this.caso.asesorCierraId).subscribe({
           next: response=> {
-            this.asesorCierra = response.Admin;
+            this.asesorCierra = response.Asesor;
           }
         });
       }
@@ -166,7 +183,6 @@ export class ChatComponent implements OnInit, OnChanges, AfterViewChecked, OnDes
       if (!this.modoSoloLectura) {
         this.mensajeSubscription = this.wsService.suscribirACaso(this.caso.id).subscribe(
           (newMensaje) => {
-            console.log('Nuevo mensaje recibido: ', newMensaje);
             this.ngZone.run(() => {
               this.mensajes = [...this.mensajes, newMensaje];
               this.nuevoMensajeRecibido.emit(newMensaje);
@@ -248,7 +264,9 @@ export class ChatComponent implements OnInit, OnChanges, AfterViewChecked, OnDes
   }
 
   cargarMensajes(inicial: boolean = true): void {
-    if(this.cargandoMasMensajes || !this.hayMasMensajes) return;
+    if(this.cargandoMasMensajes || !this.hayMasMensajes) {
+      return;
+    }
 
     if (inicial) {
       // Carga inicial: cargar inmediatamente sin animación prolongada
@@ -256,18 +274,24 @@ export class ChatComponent implements OnInit, OnChanges, AfterViewChecked, OnDes
 
       this.mensajesService.getMensajesPorCaso(this.caso.id, this.paginaActual, this.tamanoPagina).subscribe({
         next: response => {
-          const mensajesNuevos = response.reverse();
-          this.mensajes = mensajesNuevos;
-          this.debeHacerScroll = true;
-          this.hayMasMensajes = mensajesNuevos.length === this.tamanoPagina;
-          this.paginaActual++;
+          // Ejecutar dentro de NgZone para asegurar la detección de cambios
+          this.ngZone.run(() => {
+            const mensajesNuevos = response.reverse();
+            this.mensajes = mensajesNuevos;
+            this.debeHacerScroll = true;
+            this.hayMasMensajes = mensajesNuevos.length === this.tamanoPagina;
+            this.paginaActual++;
 
-          setTimeout(() => {
-            this.cargandoMasMensajes = false;
-          }, 500);
+            setTimeout(() => {
+              this.cargandoMasMensajes = false;
+            }, 500);
+          });
         },
         error: error => {
-          this.cargandoMasMensajes = false;
+          console.error('Error al cargar mensajes:', error);
+          this.ngZone.run(() => {
+            this.cargandoMasMensajes = false;
+          });
         }
       });
     } else {
