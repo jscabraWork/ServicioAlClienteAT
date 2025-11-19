@@ -155,7 +155,7 @@
 
   .ultimo-mensaje {
     font-size: v.$font-size-base;
-    color: #ff6b35;
+    color: v.$color-naranja-mensaje;
     display: block;
     white-space: nowrap;
     overflow: hidden;
@@ -172,7 +172,7 @@
   .check-icon {
     width: 14px;
     height: 14px;
-    color: #7c8a93;
+    color: v.$color-gris-icon;
   }
 
   .estado-select {
@@ -194,12 +194,12 @@
     width: 80%;
 
     &:hover {
-      background-color: #6a7881;
+      background-color: v.$color-gris-hover-estado;
     }
 
     &:focus {
       outline: none;
-      box-shadow: 0 0 0 2px rgba(124, 138, 147, 0.3);
+      @include m.focus-ring(v.$color-gris-icon);
     }
 
     option {
@@ -246,38 +246,8 @@
 }
 
 .loading-indicator {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 10px;
+  @include m.loading-spinner;
   padding: 20px;
-  color: v.$color-texto-light;
-  font-size: v.$font-size-sm;
-  animation: fadeIn 0.3s ease-in;
-
-  .spinner {
-    width: 20px;
-    height: 20px;
-    border: 2px solid v.$color-gris-border;
-    border-top-color: v.$color-primario;
-    border-radius: 50%;
-    animation: spin 0.8s linear infinite;
-  }
-}
-
-@keyframes spin {
-  to {
-    transform: rotate(360deg);
-  }
-}
-
-@keyframes fadeIn {
-  from {
-    opacity: 0;
-  }
-  to {
-    opacity: 1;
-  }
 }
 
 // Estilos responsive para móviles

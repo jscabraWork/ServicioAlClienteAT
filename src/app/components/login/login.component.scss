@@ -75,7 +75,7 @@
     &:focus {
       outline: none;
       border-color: v.$color-primario;
-      box-shadow: 0 0 0 3px rgba(v.$color-primario, 0.1);
+      @include m.focus-ring(v.$color-primario);
     }
 
     &:disabled {

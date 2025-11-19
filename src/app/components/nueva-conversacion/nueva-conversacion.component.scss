@@ -78,7 +78,7 @@
     .form-control {
       width: 100%;
       padding: 10px 12px;
-      border: 1px solid #d0d0d0;
+      border: 1px solid v.$color-border-input;
       border-radius: v.$border-radius-md;
       font-size: v.$font-size-lg;
       font-family: v.$font-tertiary;
@@ -89,7 +89,7 @@
       &:focus {
         outline: none;
         border-color: v.$color-secundario;
-        box-shadow: 0 0 0 3px rgba(v.$color-secundario, 0.1);
+        @include m.focus-ring(v.$color-secundario);
       }
 
       &::placeholder {
@@ -106,7 +106,7 @@
       width: 100% !important;
       height: 42px;
       border-radius: v.$border-radius-md;
-      border: 1px solid #d0d0d0;
+      border: 1px solid v.$color-border-input;
       font-size: v.$font-size-base;
       padding-left: 52px !important; /* espacio para la bandera */
       box-sizing: border-box;
@@ -171,7 +171,7 @@
       }
 
       &:disabled {
-        background: #d0d0d0;
+        background: v.$color-border-input;
         cursor: not-allowed;
       }
     }

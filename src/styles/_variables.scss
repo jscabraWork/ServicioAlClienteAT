@@ -50,6 +50,12 @@ $color-error-dark: #c62828;
 $color-disabled: #f5f5f5;
 $color-amarillo-light: #F9B84A;
 $color-gris-medium: #8d99a0;
+$color-naranja-mensaje: #ff6b35;
+$color-gris-icon: #7c8a93;
+$color-gris-hover-estado: #6a7881;
+$color-grabacion-bg: #fff3e0;
+$color-grabacion-text: #e65100;
+$color-border-input: #d0d0d0;
 
 // Variables para compatibilidad (mantener mientras se migra)
 $color-base: $color-secundario;
@@ -87,6 +93,10 @@ $shadow-sm: 0 2px 10px rgba(0, 0, 0, 0.1);
 $shadow-md: 0 4px 20px rgba(0, 0, 0, 0.15);
 $shadow-lg: 0 10px 40px rgba(0, 0, 0, 0.2);
 $shadow-xl: 0 15px 50px rgba(0, 0, 0, 0.25);
+
+// Focus ring
+$focus-ring-width: 3px;
+$focus-ring-opacity: 0.1;
 
 // Borders
 $border-light: 1px solid $color-gris-light;

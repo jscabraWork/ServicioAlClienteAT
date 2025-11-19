@@ -2,7 +2,6 @@ import { Component, Input, Output, EventEmitter, OnInit, OnChanges, SimpleChange
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Subscription } from 'rxjs';
-import { CasosService } from '../../services/casos.service';
 import { Caso } from '../../models/caso.model';
 import { Mensaje } from '../../models/mensaje.model';
 import { WebSocketService } from '../../services/websocket.service';
@@ -31,18 +30,18 @@ export class ChatComponent implements OnInit, OnChanges, AfterViewChecked, OnDes
   private debeHacerScroll = false;
   private mensajeSubscription?: Subscription;
 
-  // Propiedades para multimedia
+  // Multimedia
   archivoSeleccionado: File | null = null;
-  readonly MAX_FILE_SIZE = 16 * 1024 * 1024; // 16MB en bytes
+  readonly MAX_FILE_SIZE = 16 * 1024 * 1024; // 16MB
 
-  // Propiedades para grabación de audio
+  // Grabación de audio
   grabandoAudio: boolean = false;
   mediaRecorder: MediaRecorder | null = null;
   audioChunks: Blob[] = [];
   tiempoGrabacion: number = 0;
   intervaloGrabacion: any;
 
-  // Propiedades para modal de multimedia
+  // Modal multimedia
   modalAbierto: boolean = false;
   modalUrl: any = null;
   modalTipo: 'image' | 'video' | null = null;
@@ -62,7 +61,6 @@ export class ChatComponent implements OnInit, OnChanges, AfterViewChecked, OnDes
 
 
   constructor(
-    private casosService: CasosService,
     private mensajesService: MensajesService,
     private tiposService: TiposService,
     private asesorService: AsesoresService,

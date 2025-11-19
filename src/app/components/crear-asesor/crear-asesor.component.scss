@@ -60,7 +60,7 @@ form {
     &:focus {
       outline: none;
       border-color: v.$color-naranja;
-      box-shadow: 0 0 0 3px rgba(v.$color-naranja, 0.1);
+      @include m.focus-ring(v.$color-naranja);
     }
 
     &::placeholder {
@@ -139,7 +139,7 @@ form {
 
     &:focus {
       outline: none;
-      box-shadow: 0 0 0 3px rgba(v.$color-azul-dark, 0.3);
+      @include m.focus-ring(v.$color-azul-dark);
     }
   }
 }
