@@ -1,12 +1,12 @@
 <div class="login-container">
   <div class="login-card">
     <div class="login-header">
-      <img src="assets/logo.png" alt="Logo">
+      <img src="assets/logo.png" alt="Logo de Servicio al Cliente">
       <h1>Iniciar Sesión</h1>
       <p class="subtitle">Ingresa con tu usuario de asesor servicio al cliente</p>
     </div>
 
-    <form (ngSubmit)="handleLogin()" class="login-form">
+    <form (ngSubmit)="handleLogin()" class="login-form" #loginForm="ngForm">
       <div class="form-group">
         <label for="username">Usuario</label>
         <input
@@ -16,12 +16,13 @@
           class="form-control"
           placeholder="Ingresa tu usuario"
           [(ngModel)]="usuario.usuario"
+          autocomplete="username"
           required>
       </div>
 
       <div class="form-group">
         <label for="password">Contraseña</label>
-        <div style="position: relative;">
+        <div class="password-container">
           <input
             [type]="mostrarPassword ? 'text' : 'password'"
             id="password"
@@ -29,22 +30,28 @@
             class="form-control"
             placeholder="Ingresa tu contraseña"
             [(ngModel)]="usuario.contrasena"
+            autocomplete="current-password"
             required>
           <span
-            style="position: absolute; right: 12px; top: 50%; transform: translateY(-50%); cursor: pointer;"
-            (click)="togglePassword()">
-            <i class="fa" [ngClass]="mostrarPassword ? 'fa-eye-slash' : 'fa-eye'"></i>
+            class="toggle-password"
+            (click)="togglePassword()"
+            [attr.aria-label]="mostrarPassword ? 'Ocultar contraseña' : 'Mostrar contraseña'"
+            role="button"
+            tabindex="0"
+            (keydown.enter)="togglePassword()"
+            (keydown.space)="togglePassword()">
+            <i [class]="mostrarPassword ? 'fa fa-eye-slash' : 'fa fa-eye'"></i>
           </span>
         </div>
       </div>
 
       @if (invalidLogin) {
-        <div class="error-message">
+        <div class="error-message" role="alert">
           <span>{{errorMessage}}</span>
         </div>
       }
 
-      <button class="btn-login" type="submit">
+      <button class="btn-login" type="submit" [disabled]="loginForm.invalid">
         Iniciar Sesión
       </button>
     </form>

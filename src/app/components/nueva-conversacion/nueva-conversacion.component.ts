@@ -1,31 +1,44 @@
-import { Component, ElementRef, EventEmitter, OnInit, Output, ViewChild } from '@angular/core';
+import { Component, ElementRef, EventEmitter, OnInit, Output, ViewChild, AfterViewInit, OnDestroy, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { TiposService } from '../../services/tipos.service';
 import { CasosService } from '../../services/casos.service';
-import intlTelInput from 'intl-tel-input';
+import intlTelInput, { Iti } from 'intl-tel-input';
+
+interface TipoCaso {
+  nombre: string;
+  id?: number;
+}
+
+interface Caso {
+  id: number;
+  numeroWpp: string;
+  tipo: string;
+}
 
 @Component({
   selector: 'app-nueva-conversacion',
   standalone: true,
   imports: [CommonModule, FormsModule],
   templateUrl: './nueva-conversacion.component.html',
-  styleUrls: ['./nueva-conversacion.component.scss']
+  styleUrl: './nueva-conversacion.component.scss'
 })
-export class NuevaConversacionComponent implements OnInit {
+export class NuevaConversacionComponent implements OnInit, AfterViewInit, OnDestroy {
   @Output() cerrar = new EventEmitter<void>();
-  @Output() casoCreado = new EventEmitter<any>();
+  @Output() casoCreado = new EventEmitter<Caso>();
 
-  @ViewChild('phoneInput', { static: false }) phoneInput!: ElementRef;
+  @ViewChild('phoneInput', { static: false }) phoneInput!: ElementRef<HTMLInputElement>;
 
-  numeroUsuario: string = '';
-  tipoSeleccionado: any = null;
-  tiposCaso: any[] = [];
-  iti: any;
+  numeroUsuario = '';
+  tipoSeleccionado: TipoCaso | null = null;
+  tiposCaso: TipoCaso[] = [];
+  errorMensaje = signal<string>('');
+
+  private iti: Iti | null = null;
 
   constructor(
-    private tiposService: TiposService,
-    private casosService: CasosService
+    private readonly tiposService: TiposService,
+    private readonly casosService: CasosService
   ) {}
 
   ngOnInit(): void {
@@ -33,21 +46,15 @@ export class NuevaConversacionComponent implements OnInit {
   }
 
   ngAfterViewInit(): void {
-    // Espera a que Angular renderice el input antes de inicializar el plugin
-    setTimeout(() => {
-      this.inicializarIntlTel();
-    }, 100);
+    this.inicializarIntlTel();
   }
 
   ngOnDestroy(): void {
-    if (this.iti) {
-      this.iti.destroy();
-      this.iti = null;
-    }
+    this.destruirIntlTel();
   }
 
-  inicializarIntlTel(): void {
-    if (this.phoneInput && !this.iti) {
+  private inicializarIntlTel(): void {
+    if (this.phoneInput?.nativeElement && !this.iti) {
       this.iti = intlTelInput(this.phoneInput.nativeElement, {
         initialCountry: 'co',
         separateDialCode: true,
@@ -56,55 +63,72 @@ export class NuevaConversacionComponent implements OnInit {
     }
   }
 
-  cargarTipos(): void {
+  private destruirIntlTel(): void {
+    if (this.iti) {
+      this.iti.destroy();
+      this.iti = null;
+    }
+  }
+
+  private cargarTipos(): void {
     this.tiposService.getTipos().subscribe({
-      next: response => {
+      next: (response) => {
         this.tiposCaso = response.listaTipos || [];
       },
-      error: error => {
+      error: (error) => {
+        this.errorMensaje.set('Error al cargar los tipos de caso');
         console.error('Error al cargar los tipos de caso:', error);
       }
     });
   }
 
-  onInputChange(): void {
-    // Actualiza el ngModel con el número completo en formato internacional
-    if (this.iti) {
-      this.numeroUsuario = this.iti.getNumber();
-    }
-  }
-
   cerrarModal(): void {
-    this.numeroUsuario = '';
-    this.tipoSeleccionado = null;
-    if (this.iti) {
-      this.iti.destroy();
-      this.iti = null;
-    }
+    this.limpiarFormulario();
     this.cerrar.emit();
   }
 
+  private limpiarFormulario(): void {
+    this.numeroUsuario = '';
+    this.tipoSeleccionado = null;
+    this.errorMensaje.set('');
+  }
+
   empezarChat(): void {
-    if (!this.numeroUsuario.trim() || !this.tipoSeleccionado) {
-      alert('Por favor complete todos los campos');
+    if (!this.validarFormulario()) {
+      return;
+    }
+
+    if (!this.iti) {
+      this.errorMensaje.set('Error al inicializar el selector de teléfono');
       return;
     }
 
     const numeroWpp = this.iti.getSelectedCountryData().dialCode + this.numeroUsuario;
 
-    this.casosService.crearNuevoCaso(numeroWpp, this.tipoSeleccionado.nombre).subscribe({
-      next: response => {
-        console.log(response.mensaje);
-        console.log('Caso creado:', response.caso);
+    this.casosService.crearNuevoCaso(numeroWpp, this.tipoSeleccionado!.nombre).subscribe({
+      next: (response) => {
         this.casoCreado.emit(response.caso);
         this.cerrarModal();
       },
-      error: error => {
+      error: (error) => {
+        this.errorMensaje.set('Error al crear el caso. Intente nuevamente.');
         console.error('Error al crear el caso:', error);
-        alert('Error al crear el caso');
       }
     });
+  }
 
-    console.log('Crear caso con:', numeroWpp, this.tipoSeleccionado);
+  private validarFormulario(): boolean {
+    if (!this.numeroUsuario.trim()) {
+      this.errorMensaje.set('Por favor ingrese el número de usuario');
+      return false;
+    }
+
+    if (!this.tipoSeleccionado) {
+      this.errorMensaje.set('Por favor seleccione un tipo de caso');
+      return false;
+    }
+
+    this.errorMensaje.set('');
+    return true;
   }
 }

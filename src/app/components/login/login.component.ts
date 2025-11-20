@@ -1,9 +1,7 @@
 import { CommonModule } from '@angular/common';
 import { Component, OnInit } from '@angular/core';
 import { FormsModule } from '@angular/forms';
-import { Router } from '@angular/router';
 import { HardcodedAutheticationService } from '../../services/hardcoded-authetication.service';
-import { MatDialog } from '@angular/material/dialog';
 import { AuthService } from '../../services/seguridad/auth.service';
 import { Usuario } from '../../services/usuario.model';
 
@@ -16,49 +14,72 @@ import { Usuario } from '../../services/usuario.model';
 })
 export class LoginComponent implements OnInit {
 
-  mostrarPassword: boolean = false;
+  mostrarPassword = false;
   usuario!: Usuario;
-  errorMessage='Invalid credentials'
+  errorMessage = 'Credenciales inválidas';
   invalidLogin = false;
 
   constructor(
-    private router: Router,
     public autenticacion: HardcodedAutheticationService,
-    public dialog: MatDialog,
     private auth: AuthService
   ) {}
 
   ngOnInit(): void {
     this.usuario = new Usuario();
-    this.mostrarPassword = false;
   }
 
-  togglePassword() {
+  togglePassword(): void {
     this.mostrarPassword = !this.mostrarPassword;
   }
 
-  handleLogin() {
-    if(this.usuario.usuario == null || this.usuario.contrasena == null) {
-      alert('Usuario o Contraseña vacíos');
+  handleLogin(): void {
+    // Validar campos vacíos
+    if (!this.validarCampos()) {
       return;
     }
 
+    // Cerrar sesión anterior si existe
     this.auth.logout();
 
+    // Limpiar espacios en blanco del usuario
     this.usuario.usuario = this.usuario.usuario.trim();
 
+    // Intentar login
     this.auth.login(this.usuario).subscribe({
       next: response => {
         this.auth.guardarUsuario(response.access_token);
         this.auth.guardarToken(response.access_token);
+        this.invalidLogin = false;
       },
       error: error => {
-        if(error.status == 400) {
-          alert('Usuario o clave incorrectos');
-        }
-        this.usuario = new Usuario();
-        this.invalidLogin = true;
+        this.manejarErrorLogin(error);
       }
-    })
+    });
+  }
+
+  private validarCampos(): boolean {
+    if (!this.usuario.usuario?.trim() || !this.usuario.contrasena?.trim()) {
+      this.errorMessage = 'Usuario y contraseña son requeridos';
+      this.invalidLogin = true;
+      alert('Usuario o Contraseña vacíos');
+      return false;
+    }
+    return true;
+  }
+
+  private manejarErrorLogin(error: any): void {
+    if (error.status === 400) {
+      this.errorMessage = 'Usuario o clave incorrectos';
+      alert('Usuario o clave incorrectos');
+    } else if (error.status === 0) {
+      this.errorMessage = 'Error de conexión con el servidor';
+      alert('Error de conexión. Por favor, verifica tu conexión a internet.');
+    } else {
+      this.errorMessage = 'Error al intentar iniciar sesión';
+      alert('Error al intentar iniciar sesión. Intenta nuevamente.');
+    }
+
+    this.usuario = new Usuario();
+    this.invalidLogin = true;
   }
 }

@@ -126,13 +126,13 @@ form {
     transition: all v.$transition-normal;
     box-shadow: v.$shadow-sm;
 
-    &:hover {
+    &:hover:not(:disabled) {
       background-color: v.$color-azul-darker;
       transform: translateY(-2px);
       box-shadow: v.$shadow-md;
     }
 
-    &:active {
+    &:active:not(:disabled) {
       transform: translateY(0);
       box-shadow: v.$shadow-sm;
     }
@@ -140,6 +140,12 @@ form {
     &:focus {
       outline: none;
       @include m.focus-ring(v.$color-azul-dark);
+    }
+
+    &:disabled {
+      background-color: v.$color-gris-border;
+      cursor: not-allowed;
+      opacity: 0.6;
     }
   }
 }

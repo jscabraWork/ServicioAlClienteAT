@@ -87,6 +87,42 @@
       color: v.$color-placeholder;
     }
   }
+
+  .password-container {
+    position: relative;
+    display: flex;
+    align-items: center;
+
+    .form-control {
+      padding-right: 45px;
+    }
+
+    .toggle-password {
+      position: absolute;
+      right: 12px;
+      top: 50%;
+      transform: translateY(-50%);
+      cursor: pointer;
+      padding: 8px;
+      @include m.flex-center;
+      color: v.$color-texto-light;
+      transition: color v.$transition-fast;
+      border-radius: v.$border-radius-sm;
+
+      &:hover {
+        color: v.$color-primario;
+      }
+
+      &:focus {
+        outline: 2px solid v.$color-primario;
+        outline-offset: 2px;
+      }
+
+      i {
+        font-size: 18px;
+      }
+    }
+  }
 }
 
 .error-message {

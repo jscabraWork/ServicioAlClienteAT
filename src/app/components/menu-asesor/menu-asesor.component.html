@@ -1,38 +1,46 @@
 <!-- Desktop Top Bar -->
-<header class="top-bar" *ngIf="!isMobile">
-  <img src="assets/logo2.webp" alt="Logo" class="top-logo" />
-  <a [routerLink]="'/logout'" class="logout-btn">
-    <img src="assets/cerrar-sesion.png" alt="Cerrar Sesión" />
-  </a>
-</header>
+@if (!isMobile()) {
+  <header class="top-bar">
+    <img src="assets/logo2.webp" alt="Logo" class="top-logo" />
+    <a [routerLink]="'/logout'" class="logout-btn">
+      <img src="assets/cerrar-sesion.png" alt="Cerrar Sesión" />
+    </a>
+  </header>
+}
 
 <!-- Sidebar -->
-<aside [ngClass]="{'sidebar': true, 'collapsed': isCollapsed, 'mobile': isMobile}"
+<aside [ngClass]="{'sidebar': true, 'collapsed': isCollapsed(), 'mobile': isMobile()}"
        (mouseenter)="onMouseEnter()"
        (mouseleave)="onMouseLeave()">
   <!-- Sidebar Header -->
   <div class="sidebar-header">
-    <img src="assets/logo.png" alt="Logo" class="logo-icon" *ngIf="isMobile || !isCollapsed" />
-    <button class="toggle-btn" (click)="toggleSidebar()" *ngIf="isMobile">
-      <span></span>
-      <span></span>
-      <span></span>
-    </button>
+    @if (isMobile() || !isCollapsed()) {
+      <img src="assets/logo.png" alt="Logo" class="logo-icon" />
+    }
+    @if (isMobile()) {
+      <button class="toggle-btn" (click)="toggleSidebar()">
+        <span></span>
+        <span></span>
+        <span></span>
+      </button>
+    }
   </div>
 
   <!-- Sidebar Menu -->
-  <nav class="sidebar-menu" [class.collapsed]="isCollapsed && isMobile">
-    <ng-container *ngFor="let item of navItems">
+  <nav class="sidebar-menu" [class.collapsed]="isCollapsed() && isMobile()">
+    @for (item of navItems(); track item.route) {
       <a [routerLink]="item.route"
          class="menu-item"
          [class.logout]="item.isLogout === true"
          routerLinkActive="active"
-         (click)="isMobile && closeSidebar()">
+         (click)="isMobile() && closeSidebar()">
         <img [src]="item.icon" [alt]="item.label" />
-        <span [class.hidden]="isCollapsed && !isMobile">{{item.label}}</span>
+        <span [class.hidden]="isCollapsed() && !isMobile()">{{item.label}}</span>
       </a>
-    </ng-container>
+    }
   </nav>
 </aside>
 
-<div class="overlay" *ngIf="!isCollapsed && isMobile" (click)="closeSidebar()"></div>
+@if (!isCollapsed() && isMobile()) {
+  <div class="overlay" (click)="closeSidebar()"></div>
+}

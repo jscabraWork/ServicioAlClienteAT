@@ -5,7 +5,7 @@
     <div class="form-container">
       <h1 class="title">Asesor</h1>
 
-      <form (ngSubmit)="!todoForm.invalid && save()" #todoForm="ngForm">
+      <form (ngSubmit)="save()" #todoForm="ngForm">
         <div class="form-group">
           <label for="numeroDocumento">Número Documento</label>
           <input
@@ -32,22 +32,28 @@
 
         <div class="form-group">
           <label for="tipoDocumento">Tipo de Documento</label>
-          <select type="text" name="tipo" required="required" [(ngModel)]="e.tipo_documento">
-            <option value="" disabled selected>Selecciona el tipo de documento...</option>
-            <option value="Cedula">Cedula</option>
-            <option value="TarjetaIdentidad">Tarjeta de identidad</option>
-            <option value="Pasaporte">Pasaporte</option>
+          <select
+            id="tipoDocumento"
+            name="tipo"
+            [(ngModel)]="e.tipo_documento"
+            required>
+            <option value="" disabled>Selecciona el tipo de documento...</option>
+            @for (tipo of tiposDocumento; track tipo.valor) {
+              <option [value]="tipo.valor">
+                {{ tipo.etiqueta }}
+              </option>
+            }
           </select>
         </div>
 
         <div class="form-group">
           <label for="celular">Celular</label>
           <input
-            type="text"
+            type="tel"
             id="celular"
             [(ngModel)]="e.celular"
             name="celular"
-            placeholder="Ingresar Celular.."
+            placeholder="Ingresar celular.."
             required
           />
         </div>
@@ -55,10 +61,11 @@
         <div class="form-group">
           <label for="usuario">Usuario</label>
           <input
-            type="text"
+            type="email"
             id="usuario"
             [(ngModel)]="e.correo"
             name="usuario"
+            placeholder="Ingresar correo electrónico.."
             required
           />
         </div>
@@ -71,19 +78,20 @@
               id="contrasena"
               [(ngModel)]="e.contrasena"
               name="contrasena"
+              placeholder="Ingresar contraseña.."
               required
             />
             <span
-                class="toggle-password"
-                style="cursor: pointer; padding-top: 20px;"
-                (click)="togglePassword()">
-                <i [ngClass]="mostrarPassword ? 'fa fa-eye-slash' : 'fa fa-eye'"></i>
+              class="toggle-password"
+              (click)="togglePassword()"
+              [attr.aria-label]="mostrarPassword ? 'Ocultar contraseña' : 'Mostrar contraseña'">
+              <i [ngClass]="mostrarPassword ? 'fa fa-eye-slash' : 'fa fa-eye'"></i>
             </span>
           </div>
         </div>
 
         <div class="button-container">
-          <button type="submit" class="submit-button">Guardar</button>
+          <button type="submit" class="submit-button" [disabled]="todoForm.invalid">Guardar</button>
         </div>
       </form>
     </div>

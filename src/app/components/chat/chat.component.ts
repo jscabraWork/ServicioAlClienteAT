@@ -39,11 +39,11 @@ export class ChatComponent implements OnInit, OnChanges, AfterViewChecked, OnDes
   mediaRecorder: MediaRecorder | null = null;
   audioChunks: Blob[] = [];
   tiempoGrabacion: number = 0;
-  intervaloGrabacion: any;
+  intervaloGrabacion: number | null = null;
 
   // Modal multimedia
   modalAbierto: boolean = false;
-  modalUrl: any = null;
+  modalUrl: string | null = null;
   modalTipo: 'image' | 'video' | null = null;
 
   nombreAsesor: string='';
@@ -53,7 +53,7 @@ export class ChatComponent implements OnInit, OnChanges, AfterViewChecked, OnDes
   tamanoPagina: number = 20
   cargandoMasMensajes: boolean = false;
   hayMasMensajes: boolean = true;
-  private scrollTimeout: any = null;
+  private scrollTimeout: number | null = null;
 
   tipo?: Tipo;
   asesorAbre?: Asesor;
@@ -73,44 +73,9 @@ export class ChatComponent implements OnInit, OnChanges, AfterViewChecked, OnDes
     const usuarioEntidad = JSON.parse(sessionStorage.getItem('usuarioEntidad') || '{}');
     this.idAsesor = usuarioEntidad?.numeroDocumento || '';
 
-    this.tiposService.obtenerTipoPorId(this.caso.tipoId).subscribe({
-      next: response => {
-        this.tipo = response.Tipo;
-      }
-    })
-
-    if(this.caso.asesorAbreId) {
-        this.asesorService.obtenerAsesorPorId(this.caso.asesorAbreId).subscribe({
-        next: response=> {
-          this.asesorAbre = response.Asesor;
-        }
-      })
-    }
-    
-    if (this.caso.asesorCierraId) {
-      this.asesorService.obtenerAsesorPorId(this.caso.asesorCierraId).subscribe({
-        next: response=> {
-          this.asesorCierra = response.Asesor;
-        }
-      })
-    }
-    
-    
+    this.cargarDatosCaso();
     this.cargarMensajes(true);
-
-    // Solo suscribirse a WebSocket si NO está en modo solo lectura
-    if (!this.modoSoloLectura) {
-      this.mensajeSubscription = this.wsService.suscribirACaso(this.caso.id).subscribe(
-        (newMensaje) => {
-          // Ejecutar dentro de NgZone para asegurar que los event listeners funcionen correctamente
-          this.ngZone.run(() => {
-            this.mensajes = [...this.mensajes, newMensaje];
-            this.nuevoMensajeRecibido.emit(newMensaje);
-            this.debeHacerScroll = true;
-          });
-        }
-      )
-    }
+    this.suscribirseAWebSocket();
   }
 
   ngOnDestroy(): void {
@@ -118,77 +83,18 @@ export class ChatComponent implements OnInit, OnChanges, AfterViewChecked, OnDes
     if (this.mensajeSubscription) {
       this.mensajeSubscription.unsubscribe();
     }
+
+    // Limpiar timeouts e intervalos
+    this.limpiarTimers();
   }
 
   ngOnChanges(changes: SimpleChanges): void {
     // Detectar cuando cambia el caso y recargar los mensajes
     if (changes['caso'] && !changes['caso'].firstChange) {
-      // Destruir suscripción anterior del WebSocket
-      if (this.mensajeSubscription) {
-        this.mensajeSubscription.unsubscribe();
-      }
-
-      // IMPORTANTE: Resetear el estado de carga ANTES de cualquier otra operación
-      // para evitar que quede bloqueado de la carga anterior
-      // Forzar el reseteo dentro de NgZone
-      this.ngZone.run(() => {
-        this.cargandoMasMensajes = false;
-      });
-
-      // Limpiar cualquier timeout pendiente del scroll
-      if (this.scrollTimeout) {
-        clearTimeout(this.scrollTimeout);
-        this.scrollTimeout = null;
-      }
-
-      // Resetear variables de paginación y estado de carga
-      this.paginaActual = 0;
-      this.hayMasMensajes = true;
-      this.mensajes = [];
-
-      // Resetear las propiedades del caso anterior para evitar mostrar datos incorrectos
-      this.tipo = undefined as any;
-      this.asesorAbre = undefined as any;
-      this.asesorCierra = undefined as any;
-
-      // Cargar información del nuevo caso
-      this.tiposService.obtenerTipoPorId(this.caso.tipoId).subscribe({
-        next: response => {
-          this.tipo = response.Tipo;
-        }
-      });
-
-      if(this.caso.asesorAbreId) {
-        this.asesorService.obtenerAsesorPorId(this.caso.asesorAbreId).subscribe({
-          next: response=> {
-            this.asesorAbre = response.Asesor;
-          }
-        });
-      }
-
-      if (this.caso.asesorCierraId) {
-        this.asesorService.obtenerAsesorPorId(this.caso.asesorCierraId).subscribe({
-          next: response=> {
-            this.asesorCierra = response.Asesor;
-          }
-        });
-      }
-
-      // Cargar mensajes del nuevo caso
+      this.resetearEstado();
+      this.cargarDatosCaso();
       this.cargarMensajes(true);
-
-      // Re-suscribirse al WebSocket del nuevo caso si NO está en modo solo lectura
-      if (!this.modoSoloLectura) {
-        this.mensajeSubscription = this.wsService.suscribirACaso(this.caso.id).subscribe(
-          (newMensaje) => {
-            this.ngZone.run(() => {
-              this.mensajes = [...this.mensajes, newMensaje];
-              this.nuevoMensajeRecibido.emit(newMensaje);
-              this.debeHacerScroll = true;
-            });
-          }
-        );
-      }
+      this.suscribirseAWebSocket();
     }
   }
 
@@ -224,6 +130,82 @@ export class ChatComponent implements OnInit, OnChanges, AfterViewChecked, OnDes
     }
   }
 
+  private limpiarTimers(): void {
+    if (this.scrollTimeout !== null) {
+      clearTimeout(this.scrollTimeout);
+      this.scrollTimeout = null;
+    }
+
+    if (this.intervaloGrabacion !== null) {
+      clearInterval(this.intervaloGrabacion);
+      this.intervaloGrabacion = null;
+    }
+  }
+
+  private resetearEstado(): void {
+    // Destruir suscripción anterior del WebSocket
+    if (this.mensajeSubscription) {
+      this.mensajeSubscription.unsubscribe();
+    }
+
+    // Resetear el estado de carga
+    this.ngZone.run(() => {
+      this.cargandoMasMensajes = false;
+    });
+
+    // Limpiar timers
+    this.limpiarTimers();
+
+    // Resetear variables de paginación y estado de carga
+    this.paginaActual = 0;
+    this.hayMasMensajes = true;
+    this.mensajes = [];
+
+    // Resetear las propiedades del caso anterior
+    this.tipo = undefined;
+    this.asesorAbre = undefined;
+    this.asesorCierra = undefined;
+  }
+
+  private cargarDatosCaso(): void {
+    this.tiposService.obtenerTipoPorId(this.caso.tipoId).subscribe({
+      next: response => {
+        this.tipo = response.Tipo;
+      }
+    });
+
+    if (this.caso.asesorAbreId) {
+      this.asesorService.obtenerAsesorPorId(this.caso.asesorAbreId).subscribe({
+        next: response => {
+          this.asesorAbre = response.Asesor;
+        }
+      });
+    }
+
+    if (this.caso.asesorCierraId) {
+      this.asesorService.obtenerAsesorPorId(this.caso.asesorCierraId).subscribe({
+        next: response => {
+          this.asesorCierra = response.Asesor;
+        }
+      });
+    }
+  }
+
+  private suscribirseAWebSocket(): void {
+    // Solo suscribirse a WebSocket si NO está en modo solo lectura
+    if (!this.modoSoloLectura) {
+      this.mensajeSubscription = this.wsService.suscribirACaso(this.caso.id).subscribe(
+        (newMensaje) => {
+          this.ngZone.run(() => {
+            this.mensajes = [...this.mensajes, newMensaje];
+            this.nuevoMensajeRecibido.emit(newMensaje);
+            this.debeHacerScroll = true;
+          });
+        }
+      );
+    }
+  }
+
   private scrollAlFinal(): void {
     try {
       // Usar requestAnimationFrame para mejor sincronización con el render
@@ -241,14 +223,7 @@ export class ChatComponent implements OnInit, OnChanges, AfterViewChecked, OnDes
 
   onImagenCargada(): void {
     // Cuando una imagen termina de cargar, hacer scroll al final
-    try {
-      requestAnimationFrame(() => {
-        const container = this.chatMensajesContainer.nativeElement;
-        container.scrollTop = container.scrollHeight;
-      });
-    } catch (err) {
-      console.error('Error al hacer scroll después de cargar imagen:', err);
-    }
+    this.debeHacerScroll = true;
   }
 
   onVideoLoaded(event: Event): void {
@@ -257,84 +232,55 @@ export class ChatComponent implements OnInit, OnChanges, AfterViewChecked, OnDes
     video.currentTime = 0.1; // Cargar un frame inicial para la miniatura
   }
 
-  getMediaUrl(mensaje: Mensaje): any {
+  getMediaUrl(mensaje: Mensaje): string {
     return this.mensajesService.obtenerMediaCompleto(mensaje.mediaId);
   }
 
   cargarMensajes(inicial: boolean = true): void {
-    if(this.cargandoMasMensajes || !this.hayMasMensajes) {
+    if (this.cargandoMasMensajes || !this.hayMasMensajes) {
       return;
     }
 
-    if (inicial) {
-      // Carga inicial: cargar inmediatamente sin animación prolongada
-      this.cargandoMasMensajes = true;
+    this.cargandoMasMensajes = true;
 
-      this.mensajesService.getMensajesPorCaso(this.caso.id, this.paginaActual, this.tamanoPagina).subscribe({
-        next: response => {
-          // Ejecutar dentro de NgZone para asegurar la detección de cambios
+    this.mensajesService.getMensajesPorCaso(this.caso.id, this.paginaActual, this.tamanoPagina).subscribe({
+      next: response => {
+        const mensajesNuevos = response.reverse();
+        const delayAnimacion = inicial ? 500 : 1000;
+
+        setTimeout(() => {
           this.ngZone.run(() => {
-            const mensajesNuevos = response.reverse();
-            this.mensajes = mensajesNuevos;
-            this.debeHacerScroll = true;
-            this.hayMasMensajes = mensajesNuevos.length === this.tamanoPagina;
-            this.paginaActual++;
-
-            setTimeout(() => {
-              this.cargandoMasMensajes = false;
-            }, 500);
-          });
-        },
-        error: error => {
-          console.error('Error al cargar mensajes:', error);
-          this.ngZone.run(() => {
-            this.cargandoMasMensajes = false;
-          });
-        }
-      });
-    } else {
-      // Carga de más mensajes: mostrar animación primero
-      this.cargandoMasMensajes = true;
-
-      this.mensajesService.getMensajesPorCaso(this.caso.id, this.paginaActual, this.tamanoPagina).subscribe({
-        next: response => {
-          const mensajesNuevos = response.reverse();
-
-          // Esperar 1 segundo mostrando la animación
-          setTimeout(() => {
-            // Ocultar animación
-            this.cargandoMasMensajes = false;
-
-            // Después de ocultar la animación, agregar los mensajes
-            setTimeout(() => {
+            if (inicial) {
+              this.mensajes = mensajesNuevos;
+              this.debeHacerScroll = true;
+            } else {
               const container = this.chatMensajesContainer.nativeElement;
               const alturaAntes = container.scrollHeight;
 
-              // Agregar nuevos mensajes al inicio
               this.mensajes = [...mensajesNuevos, ...this.mensajes];
-
-              // Actualizar variables de paginación
-              this.hayMasMensajes = mensajesNuevos.length === this.tamanoPagina;
-              this.paginaActual++;
-
-              // Forzar detección de cambios
               this.cdr.detectChanges();
 
-              // Ajustar scroll para mantener posición
-              setTimeout(() => {
+              requestAnimationFrame(() => {
                 const alturaDespues = container.scrollHeight;
                 container.scrollTop = alturaDespues - alturaAntes;
-              }, 50);
-            }, 100);
-          }, 1000);
-        },
-        error: error => {
-          setTimeout(() => {
+              });
+            }
+
+            this.hayMasMensajes = mensajesNuevos.length === this.tamanoPagina;
+            this.paginaActual++;
             this.cargandoMasMensajes = false;
-          }, 1000);
-        }
-      });
-    }
+          });
+        }, delayAnimacion);
+      },
+      error: error => {
+        console.error('Error al cargar mensajes:', error);
+        setTimeout(() => {
+          this.ngZone.run(() => {
+            this.cargandoMasMensajes = false;
+          });
+        }, inicial ? 500 : 1000);
+      }
+    });
   }
 
   // Comprimir imagen
@@ -342,9 +288,9 @@ export class ChatComponent implements OnInit, OnChanges, AfterViewChecked, OnDes
     return new Promise((resolve, reject) => {
       const reader = new FileReader();
       reader.readAsDataURL(file);
-      reader.onload = (event: any) => {
+      reader.onload = (event: ProgressEvent<FileReader>) => {
         const img = new Image();
-        img.src = event.target.result;
+        img.src = event.target?.result as string;
         img.onload = () => {
           const canvas = document.createElement('canvas');
           let width = img.width;
@@ -395,7 +341,6 @@ export class ChatComponent implements OnInit, OnChanges, AfterViewChecked, OnDes
 
   // Comprimir audio
   async comprimirAudio(file: File): Promise<File> {
-    // Para audio, si excede 16MB, intentamos re-codificar a menor bitrate
     if (file.size <= this.MAX_FILE_SIZE) {
       return file;
     }
@@ -404,9 +349,9 @@ export class ChatComponent implements OnInit, OnChanges, AfterViewChecked, OnDes
       const audioContext = new AudioContext();
       const reader = new FileReader();
 
-      reader.onload = async (e: any) => {
+      reader.onload = async (e: ProgressEvent<FileReader>) => {
         try {
-          const arrayBuffer = e.target.result;
+          const arrayBuffer = e.target?.result as ArrayBuffer;
           const audioBuffer = await audioContext.decodeAudioData(arrayBuffer);
 
           // Re-codificar a menor sample rate
@@ -422,46 +367,10 @@ export class ChatComponent implements OnInit, OnChanges, AfterViewChecked, OnDes
           source.start();
 
           const renderedBuffer = await offlineContext.startRendering();
+          const wavBlob = this.convertirAudioBufferAWav(renderedBuffer);
+          const compressedFile = new File([wavBlob], file.name.replace(/\.\w+$/, '.wav'), { type: 'audio/wav' });
 
-          // Convertir a blob
-          const length = renderedBuffer.length * renderedBuffer.numberOfChannels * 2;
-          const buffer = new ArrayBuffer(44 + length);
-          const view = new DataView(buffer);
-
-          // Escribir header WAV
-          const writeString = (offset: number, string: string) => {
-            for (let i = 0; i < string.length; i++) {
-              view.setUint8(offset + i, string.charCodeAt(i));
-            }
-          };
-
-          writeString(0, 'RIFF');
-          view.setUint32(4, 36 + length, true);
-          writeString(8, 'WAVE');
-          writeString(12, 'fmt ');
-          view.setUint32(16, 16, true);
-          view.setUint16(20, 1, true);
-          view.setUint16(22, renderedBuffer.numberOfChannels, true);
-          view.setUint32(24, renderedBuffer.sampleRate, true);
-          view.setUint32(28, renderedBuffer.sampleRate * renderedBuffer.numberOfChannels * 2, true);
-          view.setUint16(32, renderedBuffer.numberOfChannels * 2, true);
-          view.setUint16(34, 16, true);
-          writeString(36, 'data');
-          view.setUint32(40, length, true);
-
-          // Escribir datos de audio
-          const channelData = renderedBuffer.getChannelData(0);
-          let offset = 44;
-          for (let i = 0; i < channelData.length; i++) {
-            const sample = Math.max(-1, Math.min(1, channelData[i]));
-            view.setInt16(offset, sample < 0 ? sample * 0x8000 : sample * 0x7FFF, true);
-            offset += 2;
-          }
-
-          const blob = new Blob([buffer], { type: 'audio/wav' });
-          const compressedFile = new File([blob], file.name.replace(/\.\w+$/, '.wav'), { type: 'audio/wav' });
-
-          console.log(`Audio comprimido: ${(file.size / 1024 / 1024).toFixed(2)}MB -> ${(blob.size / 1024 / 1024).toFixed(2)}MB`);
+          console.log(`Audio comprimido: ${(file.size / 1024 / 1024).toFixed(2)}MB -> ${(wavBlob.size / 1024 / 1024).toFixed(2)}MB`);
 
           if (compressedFile.size <= this.MAX_FILE_SIZE) {
             resolve(compressedFile);
@@ -476,6 +385,44 @@ export class ChatComponent implements OnInit, OnChanges, AfterViewChecked, OnDes
       reader.onerror = () => reject(new Error('Error al leer audio'));
       reader.readAsArrayBuffer(file);
     });
+  }
+
+  private convertirAudioBufferAWav(audioBuffer: AudioBuffer): Blob {
+    const length = audioBuffer.length * audioBuffer.numberOfChannels * 2;
+    const buffer = new ArrayBuffer(44 + length);
+    const view = new DataView(buffer);
+
+    // Escribir header WAV
+    const writeString = (offset: number, string: string) => {
+      for (let i = 0; i < string.length; i++) {
+        view.setUint8(offset + i, string.charCodeAt(i));
+      }
+    };
+
+    writeString(0, 'RIFF');
+    view.setUint32(4, 36 + length, true);
+    writeString(8, 'WAVE');
+    writeString(12, 'fmt ');
+    view.setUint32(16, 16, true);
+    view.setUint16(20, 1, true);
+    view.setUint16(22, audioBuffer.numberOfChannels, true);
+    view.setUint32(24, audioBuffer.sampleRate, true);
+    view.setUint32(28, audioBuffer.sampleRate * audioBuffer.numberOfChannels * 2, true);
+    view.setUint16(32, audioBuffer.numberOfChannels * 2, true);
+    view.setUint16(34, 16, true);
+    writeString(36, 'data');
+    view.setUint32(40, length, true);
+
+    // Escribir datos de audio
+    const channelData = audioBuffer.getChannelData(0);
+    let offset = 44;
+    for (let i = 0; i < channelData.length; i++) {
+      const sample = Math.max(-1, Math.min(1, channelData[i]));
+      view.setInt16(offset, sample < 0 ? sample * 0x8000 : sample * 0x7FFF, true);
+      offset += 2;
+    }
+
+    return new Blob([buffer], { type: 'audio/wav' });
   }
 
   async seleccionarArchivo(event: Event): Promise<void> {
@@ -496,9 +443,10 @@ export class ChatComponent implements OnInit, OnChanges, AfterViewChecked, OnDes
         if (this.archivoSeleccionado) {
           console.log('Imagen lista para enviar:', this.archivoSeleccionado.name);
         }
-      } catch (error: any) {
+      } catch (error) {
         console.error('Error al procesar imagen:', error);
-        alert(error.message || 'Error al procesar la imagen');
+        const errorMsg = error instanceof Error ? error.message : 'Error al procesar la imagen';
+        alert(errorMsg);
         this.archivoSeleccionado = null;
       }
 
@@ -559,7 +507,7 @@ export class ChatComponent implements OnInit, OnChanges, AfterViewChecked, OnDes
       this.mediaRecorder.stop();
       this.grabandoAudio = false;
 
-      if (this.intervaloGrabacion) {
+      if (this.intervaloGrabacion !== null) {
         clearInterval(this.intervaloGrabacion);
         this.intervaloGrabacion = null;
       }
@@ -579,18 +527,19 @@ export class ChatComponent implements OnInit, OnChanges, AfterViewChecked, OnDes
       }
 
       this.mensajesService.enviarMensajeConArchivo(this.caso.id, audioFile, 'audio').subscribe({
-        next: (response: any) => {
+        next: (response) => {
           console.log('Audio enviado:', response);
           this.debeHacerScroll = true;
         },
-        error: (error: any) => {
+        error: (error) => {
           console.error('Error al enviar audio:', error);
           alert('Error al enviar el audio');
         }
       });
-    } catch (error: any) {
+    } catch (error) {
       console.error('Error al comprimir audio:', error);
-      alert(error.message || 'Error al procesar el audio');
+      const errorMsg = error instanceof Error ? error.message : 'Error al procesar el audio';
+      alert(errorMsg);
     }
   }
 
@@ -602,12 +551,12 @@ export class ChatComponent implements OnInit, OnChanges, AfterViewChecked, OnDes
         this.archivoSeleccionado,
         'image'
       ).subscribe({
-        next: (response: any) => {
+        next: (response) => {
           console.log('Imagen enviada:', response);
           this.archivoSeleccionado = null;
           this.debeHacerScroll = true;
         },
-        error: (error: any) => {
+        error: (error) => {
           console.error('Error al enviar imagen:', error);
           alert('Error al enviar la imagen');
         }
@@ -633,7 +582,7 @@ export class ChatComponent implements OnInit, OnChanges, AfterViewChecked, OnDes
     return mensaje.id;
   }
 
-  abrirModal(event: Event, url: any, tipo: 'image' | 'video'): void {
+  abrirModal(event: Event, url: string, tipo: 'image' | 'video'): void {
     event.stopPropagation();
     event.preventDefault();
     this.modalUrl = url;
@@ -647,8 +596,8 @@ export class ChatComponent implements OnInit, OnChanges, AfterViewChecked, OnDes
 
     // Pausar video si estaba reproduciéndose
     if (this.modalTipo === 'video') {
-      const videos = document.querySelectorAll('.modal-multimedia video');
-      videos.forEach((video: any) => {
+      const videos = document.querySelectorAll<HTMLVideoElement>('.modal-multimedia video');
+      videos.forEach((video) => {
         video.pause();
         video.currentTime = 0;
       });

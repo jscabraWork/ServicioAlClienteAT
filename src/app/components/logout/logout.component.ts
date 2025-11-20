@@ -1,23 +1,19 @@
-import { Component, OnInit } from '@angular/core';
-import { CommonModule } from '@angular/common';
+import { Component, inject } from '@angular/core';
 import { Router } from '@angular/router';
 import { AuthService } from '../../services/seguridad/auth.service';
 
 @Component({
   selector: 'app-logout',
   standalone: true,
-  imports: [CommonModule],
+  imports: [],
   templateUrl: './logout.component.html',
   styleUrl: './logout.component.scss'
 })
-export class LogoutComponent implements OnInit {
+export class LogoutComponent {
+  private readonly authService = inject(AuthService);
+  private readonly router = inject(Router);
 
-  constructor(
-    private authService: AuthService,
-    private router: Router
-  ) {}
-
-  ngOnInit(): void {
+  constructor() {
     this.authService.logout();
   }
 

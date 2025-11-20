@@ -2,19 +2,33 @@
   <div class="modal-content" (click)="$event.stopPropagation()">
     <div class="modal-header">
       <h3>Nuevo Chat</h3>
-      <button class="btn-cerrar" (click)="cerrarModal()">&times;</button>
+      <button
+        type="button"
+        class="btn-cerrar"
+        (click)="cerrarModal()"
+        aria-label="Cerrar modal">
+        &times;
+      </button>
     </div>
 
     <div class="modal-body">
+      @if (errorMensaje()) {
+        <div class="alert alert-error" role="alert">
+          {{ errorMensaje() }}
+        </div>
+      }
+
       <div class="form-group">
         <label for="phoneInput">Número de usuario</label>
         <input
           #phoneInput
-          type="text"
+          type="tel"
           id="phoneInput"
           class="form-control"
           [(ngModel)]="numeroUsuario"
-          placeholder="Ingrese el número de usuario">
+          placeholder="Ingrese el número de usuario"
+          aria-describedby="phoneHelp"
+          autocomplete="tel">
       </div>
 
       <div class="form-group">
@@ -22,18 +36,32 @@
         <select
           id="tipoSelect"
           class="form-control"
-          [(ngModel)]="tipoSeleccionado">
-          <option [value]="null" disabled selected>Seleccione un tipo</option>
-          <option *ngFor="let tipo of tiposCaso" [ngValue]="tipo">
-            {{ tipo.nombre || tipo }}
-          </option>
+          [(ngModel)]="tipoSeleccionado"
+          aria-describedby="tipoHelp">
+          <option [ngValue]="null" disabled>Seleccione un tipo</option>
+          @for (tipo of tiposCaso; track tipo.id || tipo.nombre) {
+            <option [ngValue]="tipo">
+              {{ tipo.nombre }}
+            </option>
+          }
         </select>
       </div>
     </div>
 
     <div class="modal-footer">
-      <button class="btn-cancelar" (click)="cerrarModal()">Cancelar</button>
-      <button class="btn-empezar" (click)="empezarChat()">Empezar Chat</button>
+      <button
+        type="button"
+        class="btn-cancelar"
+        (click)="cerrarModal()">
+        Cancelar
+      </button>
+      <button
+        type="button"
+        class="btn-empezar"
+        (click)="empezarChat()"
+        [disabled]="!numeroUsuario.trim() || !tipoSeleccionado">
+        Empezar Chat
+      </button>
     </div>
   </div>
 </div>
