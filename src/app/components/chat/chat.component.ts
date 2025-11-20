@@ -11,11 +11,12 @@ import { Asesor } from '../../models/asesor.model';
 import { TiposService } from '../../services/tipos.service';
 import { AsesoresService } from '../../services/asesores.service';
 import { CasosService } from '../../services/casos.service';
+import { CrearTipoModalComponent } from '../crear-tipo-modal/crear-tipo-modal';
 
 @Component({
   selector: 'app-chat',
   standalone: true,
-  imports: [CommonModule, FormsModule],
+  imports: [CommonModule, FormsModule, CrearTipoModalComponent],
   templateUrl: './chat.component.html',
   styleUrls: ['./chat.component.scss']
 })
@@ -24,6 +25,7 @@ export class ChatComponent implements OnInit, OnChanges, AfterViewChecked, OnDes
   @Input() modoSoloLectura: boolean = false;
   @Output() cerrar = new EventEmitter<void>();
   @Output() nuevoMensajeRecibido = new EventEmitter<Mensaje>();
+  @Output() tipoAsignado = new EventEmitter<{casoId: string, tipoId: string, tipo: Tipo}>();
   @ViewChild('chatMensajes') private chatMensajesContainer!: ElementRef;
 
   mensajes: Mensaje[] = [];
@@ -64,6 +66,10 @@ export class ChatComponent implements OnInit, OnChanges, AfterViewChecked, OnDes
   tiposDisponibles: Tipo[] = [];
   tipoSeleccionado: Tipo | null = null;
   asignandoTipo: boolean = false;
+
+  // Modal crear tipo
+  modalCrearTipoAbierto: boolean = false;
+  creandoNuevoTipo: boolean = false;
 
   constructor(
     private mensajesService: MensajesService,
@@ -227,6 +233,14 @@ export class ChatComponent implements OnInit, OnChanges, AfterViewChecked, OnDes
         this.caso.tipoId = tipoId;
         this.tipo = tipoAsignado;
         this.asignandoTipo = false;
+
+        // Emitir evento para actualizar el cache en el componente padre
+        this.tipoAsignado.emit({
+          casoId: this.caso.id,
+          tipoId: tipoId,
+          tipo: tipoAsignado
+        });
+
         this.cdr.detectChanges();
       },
       error: error => {
@@ -668,5 +682,54 @@ export class ChatComponent implements OnInit, OnChanges, AfterViewChecked, OnDes
     const hours12 = hours % 12 || 12;
     const minutesStr = minutes < 10 ? '0' + minutes : minutes;
     return `${day}/${month} ${hours12}:${minutesStr}${ampm}`;
+  }
+
+  onTipoSeleccionChange(event: Event): void {
+    const selectElement = event.target as HTMLSelectElement;
+    const selectedValue = selectElement.value;
+
+    if (selectedValue === 'crear-nuevo') {
+      this.modalCrearTipoAbierto = true;
+      // Resetear el select a null
+      this.tipoSeleccionado = null;
+      selectElement.value = '';
+    }
+  }
+
+  abrirModalCrearTipo(): void {
+    this.modalCrearTipoAbierto = true;
+  }
+
+  cerrarModalCrearTipo(): void {
+    this.modalCrearTipoAbierto = false;
+  }
+
+  crearNuevoTipo(nombreTipo: string): void {
+    this.creandoNuevoTipo = true;
+
+    this.tiposService.crearTipo(nombreTipo).subscribe({
+      next: response => {
+        console.log('Tipo creado exitosamente:', response);
+
+        // Agregar el nuevo tipo a la lista
+        const nuevoTipo: Tipo = response.tipo || response.Tipo || { id: response.id, nombre: nombreTipo };
+        this.tiposDisponibles = [...this.tiposDisponibles, nuevoTipo];
+
+        // Seleccionar automáticamente el nuevo tipo
+        this.tipoSeleccionado = nuevoTipo;
+
+        // Cerrar el modal
+        this.modalCrearTipoAbierto = false;
+        this.creandoNuevoTipo = false;
+
+        // Asignar el tipo al caso automáticamente
+        this.asignarTipoACaso();
+      },
+      error: error => {
+        console.error('Error al crear tipo:', error);
+        alert('Error al crear el nuevo tipo. Por favor intenta nuevamente.');
+        this.creandoNuevoTipo = false;
+      }
+    });
   }
 }

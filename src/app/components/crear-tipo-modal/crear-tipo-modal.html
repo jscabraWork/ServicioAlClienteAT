@@ -1,0 +1,40 @@
+<div class="modal-overlay" (click)="cerrarModal()">
+  <div class="modal-contenido" (click)="$event.stopPropagation()">
+    <header class="modal-header">
+      <h3>Crear Nuevo Tipo</h3>
+      <button
+        class="btn-cerrar"
+        (click)="cerrarModal()"
+        aria-label="Cerrar modal">✕</button>
+    </header>
+
+    <section class="modal-body">
+      <div class="form-group">
+        <label for="nombreTipo">Nombre del tipo:</label>
+        <input
+          id="nombreTipo"
+          type="text"
+          [(ngModel)]="nombreTipo"
+          placeholder="Ingresa el nombre del tipo"
+          maxlength="100"
+          (keyup.enter)="confirmarCreacion()"
+          aria-label="Nombre del tipo"
+          autofocus>
+      </div>
+    </section>
+
+    <footer class="modal-footer">
+      <button
+        class="btn-cancelar"
+        (click)="cerrarModal()">
+        Cancelar
+      </button>
+      <button
+        class="btn-crear"
+        (click)="confirmarCreacion()"
+        [disabled]="!nombreTipo.trim()">
+        Crear Tipo
+      </button>
+    </footer>
+  </div>
+</div>

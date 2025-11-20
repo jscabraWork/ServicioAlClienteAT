@@ -633,6 +633,20 @@ export class CasosComponent implements OnInit, AfterViewInit, OnDestroy {
     this.cdr.detectChanges();
   }
 
+  actualizarTipoEnCache(evento: {casoId: string, tipoId: string, tipo: Tipo}): void {
+    // Actualizar el cache de tipos
+    this.tiposCache.set(evento.tipoId, evento.tipo);
+
+    // Actualizar el tipoId en el caso correspondiente de la lista
+    const casoIndex = this.casos.findIndex(c => c.id === evento.casoId);
+    if (casoIndex !== -1) {
+      this.casos[casoIndex].tipoId = evento.tipoId;
+    }
+
+    // Forzar la detección de cambios para actualizar la vista
+    this.cdr.detectChanges();
+  }
+
   obtenerTipo(caso: Caso): string {
     if (!caso.tipoId || caso.tipoId === '') {
       return 'Sin tipo asignado';

@@ -104,6 +104,13 @@
         cursor: not-allowed;
         background: v.$color-gris-muy-light;
       }
+
+      .opcion-crear-nuevo {
+        font-weight: 600;
+        color: v.$color-primario;
+        font-style: italic;
+        background-color: #f8f9fa;
+      }
     }
 
     .btn-asignar-tipo {

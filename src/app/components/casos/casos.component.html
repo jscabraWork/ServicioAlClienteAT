@@ -94,7 +94,8 @@
       [caso]="casoSeleccionado"
       [modoSoloLectura]="esModoSoloLectura"
       (cerrar)="cerrarChat()"
-      (nuevoMensajeRecibido)="actualizarUltimoMensaje($event)">
+      (nuevoMensajeRecibido)="actualizarUltimoMensaje($event)"
+      (tipoAsignado)="actualizarTipoEnCache($event)">
     </app-chat>
   }
 

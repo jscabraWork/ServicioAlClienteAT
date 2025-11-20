@@ -18,4 +18,8 @@ export class TiposService {
     return this.http.get<any>(`${this.apiUrl}/tipos/obtenerTipoPorId/${tipoId}`);
   }
 
+  crearTipo(nombre: string) {
+    return this.http.post<any>(`${this.apiUrl}/tipos/crearTipo/${nombre}`, { });
+  }
+
 }

@@ -105,12 +105,14 @@
           <select
             class="tipo-select"
             [(ngModel)]="tipoSeleccionado"
+            (change)="onTipoSeleccionChange($event)"
             [disabled]="asignandoTipo"
             aria-label="Seleccionar tipo de caso">
             <option [ngValue]="null" disabled>Selecciona un tipo...</option>
             @for (tipo of tiposDisponibles; track tipo.id || tipo.nombre) {
               <option [ngValue]="tipo">{{ tipo.nombre }}</option>
             }
+            <option value="crear-nuevo" class="opcion-crear-nuevo">¿No encuentras un tipo acorde a la solicitud? - Crear TIPO</option>
           </select>
           <button
             class="btn-asignar-tipo"
@@ -233,4 +235,11 @@
       }
     </div>
   </div>
+}
+
+@if (modalCrearTipoAbierto) {
+  <app-crear-tipo-modal
+    (cerrar)="cerrarModalCrearTipo()"
+    (crearTipo)="crearNuevoTipo($event)">
+  </app-crear-tipo-modal>
 }
