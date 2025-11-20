@@ -1,7 +1,7 @@
 <article class="chat-container">
   <header class="chat-header">
     <div>
-      <h3>Chat - {{ tipo?.nombre || 'Cargando...' }}</h3>
+      <h3>Chat - {{ tipo?.nombre || (necesitaAsignarTipo ? 'Sin tipo asignado' : 'Cargando...') }}</h3>
       <p class="chat-cliente">{{ caso.numeroUsuario }}</p>
       @if (asesorAbre) {
         <p class="chat-info-asesor">Caso abierto por: {{ asesorAbre.nombre }}</p>
@@ -88,10 +88,38 @@
   </section>
 
   @if (modoSoloLectura) {
-    <!-- Modo solo lectura -->
     <footer class="chat-input">
       <div class="conversacion-cerrada" role="status">
         Esta conversación se ha cerrado
+      </div>
+    </footer>
+  } @else if (necesitaAsignarTipo) {
+    <!-- Asignación de tipo en el footer -->
+    <footer class="chat-input">
+      <div class="asignar-tipo-container">
+        <div class="asignar-tipo-mensaje">
+          <p><strong>Este caso no tiene un tipo asignado</strong></p>
+          <p>Por favor, selecciona un tipo para poder continuar con la conversación:</p>
+        </div>
+        <div class="asignar-tipo-form">
+          <select
+            class="tipo-select"
+            [(ngModel)]="tipoSeleccionado"
+            [disabled]="asignandoTipo"
+            aria-label="Seleccionar tipo de caso">
+            <option [ngValue]="null" disabled>Selecciona un tipo...</option>
+            @for (tipo of tiposDisponibles; track tipo.id || tipo.nombre) {
+              <option [ngValue]="tipo">{{ tipo.nombre }}</option>
+            }
+          </select>
+          <button
+            class="btn-asignar-tipo"
+            (click)="asignarTipoACaso()"
+            [disabled]="!tipoSeleccionado || asignandoTipo"
+            aria-label="Asignar tipo">
+            {{ asignandoTipo ? 'Asignando...' : 'Asignar Tipo' }}
+          </button>
+        </div>
       </div>
     </footer>
   } @else {

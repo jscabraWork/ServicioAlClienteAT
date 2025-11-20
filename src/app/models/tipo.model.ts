@@ -1,4 +1,4 @@
 export interface Tipo {
-  id: number;
+  id: string;
   nombre: string;
 }

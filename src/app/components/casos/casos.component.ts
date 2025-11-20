@@ -215,6 +215,11 @@ export class CasosComponent implements OnInit, AfterViewInit, OnDestroy {
   }
 
   private notificarNuevoCaso(caso: Caso): void {
+    if (!caso.tipoId || caso.tipoId === '') {
+      this.notificacionesService.notificarNuevoCaso(caso.numeroUsuario, 'Caso sin tipo');
+      return;
+    }
+
     this.tiposService.obtenerTipoPorId(caso.tipoId).subscribe({
       next: response => {
         this.notificacionesService.notificarNuevoCaso(
@@ -629,6 +634,9 @@ export class CasosComponent implements OnInit, AfterViewInit, OnDestroy {
   }
 
   obtenerTipo(caso: Caso): string {
+    if (!caso.tipoId || caso.tipoId === '') {
+      return 'Sin tipo asignado';
+    }
     if (this.tiposCache.has(caso.tipoId)) {
       return this.tiposCache.get(caso.tipoId)!.nombre;
     }
@@ -636,7 +644,8 @@ export class CasosComponent implements OnInit, AfterViewInit, OnDestroy {
   }
 
   private cargarTiposDeCasos(casos: Caso[]): void {
-    const tiposIdsUnicos = [...new Set(casos.map(c => c.tipoId))];
+    // Filtrar casos que tienen tipoId antes de intentar cargar los tipos
+    const tiposIdsUnicos = [...new Set(casos.filter(c => c.tipoId && c.tipoId !== '').map(c => c.tipoId))];
     const tiposIdsNoEnCache = tiposIdsUnicos.filter(id => !this.tiposCache.has(id));
 
     if (tiposIdsNoEnCache.length === 0) return;

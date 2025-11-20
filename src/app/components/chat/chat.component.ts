@@ -10,6 +10,7 @@ import { Tipo } from '../../models/tipo.model';
 import { Asesor } from '../../models/asesor.model';
 import { TiposService } from '../../services/tipos.service';
 import { AsesoresService } from '../../services/asesores.service';
+import { CasosService } from '../../services/casos.service';
 
 @Component({
   selector: 'app-chat',
@@ -59,11 +60,16 @@ export class ChatComponent implements OnInit, OnChanges, AfterViewChecked, OnDes
   asesorAbre?: Asesor;
   asesorCierra?: Asesor;
 
+  // Asignación de tipo
+  tiposDisponibles: Tipo[] = [];
+  tipoSeleccionado: Tipo | null = null;
+  asignandoTipo: boolean = false;
 
   constructor(
     private mensajesService: MensajesService,
     private tiposService: TiposService,
     private asesorService: AsesoresService,
+    private casosService: CasosService,
     private wsService: WebSocketService,
     private cdr: ChangeDetectorRef,
     private ngZone: NgZone
@@ -73,6 +79,7 @@ export class ChatComponent implements OnInit, OnChanges, AfterViewChecked, OnDes
     const usuarioEntidad = JSON.parse(sessionStorage.getItem('usuarioEntidad') || '{}');
     this.idAsesor = usuarioEntidad?.numeroDocumento || '';
 
+    this.cargarTiposDisponibles();
     this.cargarDatosCaso();
     this.cargarMensajes(true);
     this.suscribirseAWebSocket();
@@ -167,12 +174,25 @@ export class ChatComponent implements OnInit, OnChanges, AfterViewChecked, OnDes
     this.asesorCierra = undefined;
   }
 
-  private cargarDatosCaso(): void {
-    this.tiposService.obtenerTipoPorId(this.caso.tipoId).subscribe({
+  private cargarTiposDisponibles(): void {
+    this.tiposService.getTipos().subscribe({
       next: response => {
-        this.tipo = response.Tipo;
+        this.tiposDisponibles = response.listaTipos || [];
+      },
+      error: error => {
+        console.error('Error al cargar tipos:', error);
       }
     });
+  }
+
+  private cargarDatosCaso(): void {
+    if (this.caso.tipoId) {
+      this.tiposService.obtenerTipoPorId(this.caso.tipoId).subscribe({
+        next: response => {
+          this.tipo = response.Tipo;
+        }
+      });
+    }
 
     if (this.caso.asesorAbreId) {
       this.asesorService.obtenerAsesorPorId(this.caso.asesorAbreId).subscribe({
@@ -189,6 +209,36 @@ export class ChatComponent implements OnInit, OnChanges, AfterViewChecked, OnDes
         }
       });
     }
+  }
+
+  asignarTipoACaso(): void {
+    if (!this.tipoSeleccionado) {
+      alert('Por favor selecciona un tipo de caso');
+      return;
+    }
+
+    this.asignandoTipo = true;
+    const tipoId = this.tipoSeleccionado.id;
+    const tipoAsignado = this.tipoSeleccionado;
+
+    this.casosService.asignarTipoACaso(this.caso.id, tipoId).subscribe({
+      next: response => {
+        console.log('Tipo asignado exitosamente:', response);
+        this.caso.tipoId = tipoId;
+        this.tipo = tipoAsignado;
+        this.asignandoTipo = false;
+        this.cdr.detectChanges();
+      },
+      error: error => {
+        console.error('Error al asignar tipo:', error);
+        alert('Error al asignar el tipo al caso');
+        this.asignandoTipo = false;
+      }
+    });
+  }
+
+  get necesitaAsignarTipo(): boolean {
+    return !this.caso.tipoId || this.caso.tipoId === '';
   }
 
   private suscribirseAWebSocket(): void {

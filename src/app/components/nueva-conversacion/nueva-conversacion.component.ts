@@ -4,17 +4,8 @@ import { FormsModule } from '@angular/forms';
 import { TiposService } from '../../services/tipos.service';
 import { CasosService } from '../../services/casos.service';
 import intlTelInput, { Iti } from 'intl-tel-input';
-
-interface TipoCaso {
-  nombre: string;
-  id?: number;
-}
-
-interface Caso {
-  id: number;
-  numeroWpp: string;
-  tipo: string;
-}
+import { Tipo } from '../../models/tipo.model';
+import { Caso } from '../../models/caso.model';
 
 @Component({
   selector: 'app-nueva-conversacion',
@@ -30,8 +21,8 @@ export class NuevaConversacionComponent implements OnInit, AfterViewInit, OnDest
   @ViewChild('phoneInput', { static: false }) phoneInput!: ElementRef<HTMLInputElement>;
 
   numeroUsuario = '';
-  tipoSeleccionado: TipoCaso | null = null;
-  tiposCaso: TipoCaso[] = [];
+  tipoSeleccionado: Tipo | null = null;
+  tiposCaso: Tipo[] = [];
   errorMensaje = signal<string>('');
 
   private iti: Iti | null = null;
@@ -105,7 +96,7 @@ export class NuevaConversacionComponent implements OnInit, AfterViewInit, OnDest
 
     const numeroWpp = this.iti.getSelectedCountryData().dialCode + this.numeroUsuario;
 
-    this.casosService.crearNuevoCaso(numeroWpp, this.tipoSeleccionado!.nombre).subscribe({
+    this.casosService.crearNuevoCaso(numeroWpp, this.tipoSeleccionado!.id).subscribe({
       next: (response) => {
         this.casoCreado.emit(response.caso);
         this.cerrarModal();

@@ -16,6 +16,10 @@ export class CasosService {
 
   constructor(private http: HttpClient) {}
 
+  asignarTipoACaso(casoId: string, tipoId: string) {
+    return this.http.put<any>(`${this.apiUrl}/casos/asignarTipo/${casoId}/${tipoId}`, {});
+  }
+
   getCasosPorEstado(estado: number, page: number, size: number){
     return this.http.get<any>(`${this.apiUrl}/casos/obtenerCasosPorEstado/${estado}?page=${page}&size=${size}`);
   }
@@ -36,7 +40,7 @@ export class CasosService {
   }
 
   // Crear nuevo caso para nueva conversacion
-  crearNuevoCaso(usuarioWhatsapp: string, tipo: string) {
-    return this.http.post<any>(`${this.apiUrl}/casos/crearCaso/${usuarioWhatsapp}/${tipo}`, {});
+  crearNuevoCaso(usuarioWhatsapp: string, tipoId: string) {
+    return this.http.post<any>(`${this.apiUrl}/casos/crearCaso/${usuarioWhatsapp}/${tipoId}`, {});
   }
 }
